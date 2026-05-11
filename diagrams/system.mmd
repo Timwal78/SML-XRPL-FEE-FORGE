@@ -1,0 +1,81 @@
+%% SML XRPL FEE FORGE — system architecture
+flowchart TB
+    subgraph EXTERNAL["External surfaces"]
+        TW["X / Twitter API v2<br/>(filtered stream)"]
+        MERCH["Merchant websites<br/>(widget.js embed)"]
+    end
+
+    subgraph FORGE["SML XRPL FEE FORGE"]
+        subgraph TIP["TIPHAWK Engine"]
+            TWLIS["twitter_listener.py"]
+            TIPENG["tip_engine.py"]
+            FEEENG1["fee_engine.py<br/>(2.0% skim)"]
+            DIGEST["ai_digest.py<br/>(Anthropic API)"]
+            TIPDB[("tiphawk.db<br/>SQLite")]
+            TIPDASH["dashboard.html"]
+        end
+
+        subgraph RAILS["RLUSD RAILS Engine"]
+            INV["invoice_engine.py"]
+            WATCH["payment_watcher.py"]
+            FEEENG2["fee_engine.py<br/>(0.5% skim)"]
+            COPY["ai_copywriter.py<br/>(Anthropic API)"]
+            RAILDB[("rails.db<br/>SQLite")]
+            WIDGET["widget.js"]
+            MDASH["merchant_dashboard.html"]
+        end
+
+        subgraph SHARED["Shared layer"]
+            XCLIENT["xrpl_client.py"]
+            ALERTS["alerts.py<br/>(Discord webhooks)"]
+            RLUSDC["rlusd.py<br/>(constants)"]
+        end
+    end
+
+    subgraph XRPL["XRP Ledger"]
+        WSCLUSTER["wss://xrplcluster.com<br/>(mainnet) or<br/>s.altnet (testnet)"]
+        ISSUER["RLUSD Issuer<br/>rMxC...m5De"]
+        OPWALLET["Operator wallet<br/>(fee receiver)"]
+    end
+
+    subgraph CHANNELS["Notification channels"]
+        DISCORD["Discord webhook"]
+        SUBSTACK["T.I.R. Substack<br/>(daily digest)"]
+    end
+
+    TW -->|new tip command| TWLIS
+    TWLIS --> TIPENG
+    TIPENG --> FEEENG1
+    FEEENG1 --> XCLIENT
+    XCLIENT <-->|sign + submit| WSCLUSTER
+    XCLIENT --> TIPDB
+    TIPENG --> ALERTS
+    ALERTS --> DISCORD
+    TIPDB --> DIGEST
+    DIGEST -->|daily 9am ET| SUBSTACK
+    TIPDASH --> TIPDB
+
+    MERCH -->|invoice request| INV
+    INV --> RAILDB
+    INV -->|return tag + addr| WIDGET
+    WIDGET -.->|user signs in wallet| WSCLUSTER
+    WSCLUSTER -->|payment landed| WATCH
+    WATCH --> FEEENG2
+    FEEENG2 --> XCLIENT
+    XCLIENT --> RAILDB
+    WATCH --> ALERTS
+    MDASH --> RAILDB
+    INV --> COPY
+
+    XCLIENT -.->|reads| ISSUER
+    XCLIENT -.->|sends fees to| OPWALLET
+
+    classDef engine fill:#0d1117,stroke:#ff6b35,stroke-width:2px,color:#fff
+    classDef shared fill:#1c2128,stroke:#58a6ff,stroke-width:2px,color:#fff
+    classDef chain fill:#0d1117,stroke:#3fb950,stroke-width:2px,color:#fff
+    classDef ext fill:#2d333b,stroke:#a371f7,stroke-width:2px,color:#fff
+
+    class TIP,RAILS engine
+    class SHARED shared
+    class XRPL chain
+    class EXTERNAL,CHANNELS ext

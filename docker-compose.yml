@@ -1,0 +1,46 @@
+# SML XRPL FEE FORGE — docker-compose
+# Runs both engines side-by-side. Shared .env, separate SQLite volumes.
+
+version: "3.9"
+
+services:
+
+  tiphawk:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: uvicorn tiphawk.main:app --host 0.0.0.0 --port 8001
+    env_file: .env
+    ports:
+      - "8001:8001"
+    volumes:
+      - tiphawk-data:/app/data
+      - ./tiphawk.db:/app/tiphawk.db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  rails:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: uvicorn rails.main:app --host 0.0.0.0 --port 8002
+    env_file: .env
+    ports:
+      - "8002:8002"
+    volumes:
+      - rails-data:/app/data
+      - ./rails.db:/app/rails.db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  tiphawk-data:
+  rails-data:

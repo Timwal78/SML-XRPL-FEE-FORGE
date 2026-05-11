@@ -1,0 +1,39 @@
+%% RLUSD RAILS — invoice → payment → payout sequence
+sequenceDiagram
+    autonumber
+    participant M as Merchant site
+    participant W as widget.js
+    participant API as rails/main.py
+    participant INV as invoice_engine
+    participant AI as ai_copywriter<br/>(Anthropic)
+    participant DB as rails.db
+    participant CUST as Customer wallet
+    participant XRPL as XRP Ledger
+    participant WATCH as payment_watcher
+    participant D as Discord
+
+    M->>W: page load (data-rlusd-rails attrs)
+    W->>W: render Pay button
+    Note over W: customer clicks Pay
+    W->>API: POST /api/invoice
+    par invoice creation
+      API->>INV: create(amount, merchant)
+      INV->>INV: derive 31-bit dest_tag<br/>(SHA256, collision-checked)
+      INV->>DB: INSERT invoice (pending)
+    and AI copy generation
+      API->>AI: generate_checkout_copy()
+      AI-->>API: {headline, blurb} (≤2s budget)
+    end
+    API-->>W: {invoice_id, dest, dest_tag, headline, blurb}
+    W->>W: render modal (QR + xrpl: deeplink)
+    CUST->>XRPL: Payment(dest, dest_tag, amount)
+    XRPL-->>WATCH: subscribed tx event
+    WATCH->>INV: get_by_tag(dest_tag)
+    INV-->>WATCH: matched invoice
+    WATCH->>XRPL: Payment(merchant_addr, merchant_payout)
+    XRPL-->>WATCH: payout_tx_hash
+    WATCH->>DB: mark_paid(invoice_id, hashes)
+    WATCH->>D: send_rich + send_compact
+    W->>API: GET /api/invoice/{id} (3s poll)
+    API-->>W: status=paid
+    W->>W: ✓ Payment received

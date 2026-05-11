@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RLUSD RAILS · Merchant Console · SML</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg: #0a0d12;
+  --bg-elev: #0f141b;
+  --bg-elev-2: #161c25;
+  --line: #1f2733;
+  --text: #e6edf3;
+  --text-dim: #7d8590;
+  --accent: #ff6b35;
+  --accent-2: #ffd700;
+  --green: #3fb950;
+  --red: #f85149;
+  --blue: #58a6ff;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  background: var(--bg); color: var(--text);
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 13px; line-height: 1.5; min-height: 100vh;
+}
+body::before {
+  content: ""; position: fixed; inset: 0;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(255,107,53,0.10), transparent 60%),
+    radial-gradient(900px 500px at 10% 110%, rgba(255,215,0,0.06), transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+body::after {
+  content: ""; position: fixed; inset: 0;
+  background-image: repeating-linear-gradient(0deg, rgba(255,255,255,0.012) 0 1px, transparent 1px 3px);
+  pointer-events: none; z-index: 0; mix-blend-mode: overlay;
+}
+.wrap { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; padding: 28px 32px; }
+
+header {
+  display: flex; align-items: baseline; justify-content: space-between;
+  border-bottom: 1px solid var(--line); padding-bottom: 18px; margin-bottom: 28px;
+}
+.brand {
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 800; font-size: 22px; letter-spacing: 0.04em;
+}
+.brand .accent { color: var(--accent-2); }
+.brand .sub { color: var(--text-dim); font-weight: 400; font-size: 11px; margin-left: 12px; letter-spacing: 0.2em; text-transform: uppercase; }
+.network-pill {
+  background: var(--bg-elev); border: 1px solid var(--line);
+  padding: 4px 12px; font-size: 10px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--text-dim);
+}
+.network-pill.live { border-color: var(--green); color: var(--green); }
+
+.grid-stats {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 24px;
+}
+.stat {
+  background: var(--bg-elev); border: 1px solid var(--line);
+  padding: 18px 20px; position: relative; overflow: hidden;
+}
+.stat::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--accent-2), var(--accent));
+  opacity: 0.7;
+}
+.stat .label { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px; }
+.stat .value { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; }
+.stat .unit { color: var(--text-dim); font-size: 12px; font-weight: 500; margin-left: 6px; }
+
+.section-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 13px; font-weight: 700; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--text-dim);
+  margin: 28px 0 12px; display: flex; align-items: center; gap: 12px;
+}
+.section-title::before { content: "▌"; color: var(--accent-2); }
+.section-title::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+.feed { background: var(--bg-elev); border: 1px solid var(--line); overflow: auto; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: 12px; }
+th { background: var(--bg-elev-2); font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; font-size: 10px; color: var(--text-dim); }
+tbody tr:hover { background: var(--bg-elev-2); }
+.status-paid { color: var(--green); }
+.status-pending { color: var(--accent-2); }
+.status-expired { color: var(--text-dim); }
+.tx-link { color: var(--blue); text-decoration: none; }
+.tx-link:hover { text-decoration: underline; }
+.id-mono { color: var(--text-dim); }
+.empty { padding: 60px 20px; text-align: center; color: var(--text-dim); }
+
+.actions { margin-top: 14px; display: flex; gap: 10px; }
+.btn {
+  background: var(--bg-elev); border: 1px solid var(--line);
+  padding: 8px 14px; color: var(--text); cursor: pointer;
+  font-family: inherit; font-size: 11px; letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+.btn:hover { border-color: var(--accent-2); color: var(--accent-2); }
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent-2), var(--accent));
+  color: var(--bg); border: 0; font-weight: 700;
+}
+
+footer {
+  margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--line);
+  display: flex; justify-content: space-between; font-size: 11px;
+  color: var(--text-dim); letter-spacing: 0.1em;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="brand">RLUSD <span class="accent">RAILS</span><span class="sub">SML · MERCHANT CONSOLE</span></div>
+    </div>
+    <div class="network-pill live" id="network">— · LOADING</div>
+  </header>
+
+  <div class="grid-stats">
+    <div class="stat"><div class="label">Total Invoices</div><div class="value" id="s-total">—</div></div>
+    <div class="stat"><div class="label">Paid</div><div class="value" id="s-paid" style="color:var(--green)">—</div></div>
+    <div class="stat"><div class="label">Pending</div><div class="value" id="s-pending" style="color:var(--accent-2)">—</div></div>
+    <div class="stat"><div class="label">Expired</div><div class="value" id="s-expired" style="color:var(--text-dim)">—</div></div>
+    <div class="stat"><div class="label">Fees Captured</div><div class="value" id="s-fees">—</div></div>
+  </div>
+
+  <div class="actions">
+    <a class="btn btn-primary" href="/widget-demo" target="_blank">Open Widget Demo →</a>
+    <button class="btn" onclick="expireDue()">Sweep expired</button>
+    <button class="btn" onclick="refresh()">Refresh</button>
+  </div>
+
+  <div class="section-title">Invoice Feed</div>
+  <div class="feed">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>When</th>
+          <th>Merchant</th>
+          <th>Amount</th>
+          <th>Fee</th>
+          <th>Payout</th>
+          <th>Tag</th>
+          <th>Status</th>
+          <th>TX</th>
+        </tr>
+      </thead>
+      <tbody id="feed-body">
+        <tr><td colspan="9" class="empty">No invoices yet…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <footer>
+    <span>SML XRPL FEE FORGE v1.0 · RLUSD RAILS</span>
+    <span id="now">—</span>
+  </footer>
+</div>
+
+<script>
+async function refresh() {
+  try {
+    const [h, rows] = await Promise.all([
+      fetch('/api/health').then(x=>x.json()),
+      fetch('/api/invoices?limit=200').then(x=>x.json()),
+    ]);
+
+    const net = document.getElementById('network');
+    net.textContent = `${(h.network||'?').toUpperCase()} · LIVE`;
+    net.classList.toggle('live', !!h.ok);
+
+    const paid = rows.filter(r=>r.status==='paid');
+    const pending = rows.filter(r=>r.status==='pending');
+    const expired = rows.filter(r=>r.status==='expired');
+    const feeByCur = {};
+    paid.forEach(r => {
+      feeByCur[r.currency] = (feeByCur[r.currency] || 0) + parseFloat(r.fee_amount);
+    });
+
+    document.getElementById('s-total').textContent = rows.length;
+    document.getElementById('s-paid').textContent = paid.length;
+    document.getElementById('s-pending').textContent = pending.length;
+    document.getElementById('s-expired').textContent = expired.length;
+
+    const feeText = Object.entries(feeByCur)
+      .map(([c, v]) => `${v.toFixed(2)} ${c}`).join(' · ') || '0';
+    document.getElementById('s-fees').innerHTML = `<span style="font-size:14px">${feeText}</span>`;
+
+    const tbody = document.getElementById('feed-body');
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="9" class="empty">No invoices yet…</td></tr>';
+    } else {
+      tbody.innerHTML = rows.map(r => `
+        <tr>
+          <td class="id-mono">${r.invoice_id}</td>
+          <td>${new Date(r.created_at).toLocaleString()}</td>
+          <td>${r.merchant_id}</td>
+          <td>${r.amount} ${r.currency}</td>
+          <td>${r.fee_amount} ${r.currency}</td>
+          <td>${r.merchant_payout} ${r.currency}</td>
+          <td class="id-mono">${r.destination_tag}</td>
+          <td class="status-${r.status}">${r.status.toUpperCase()}</td>
+          <td>${r.tx_hash ? `<a class="tx-link" target="_blank" href="https://xrpscan.com/tx/${r.tx_hash}">${r.tx_hash.slice(0,10)}…</a>` : '—'}</td>
+        </tr>
+      `).join('');
+    }
+    document.getElementById('now').textContent = new Date().toLocaleString();
+  } catch (e) { console.error(e); }
+}
+async function expireDue() {
+  await fetch('/api/expire', {method:'POST'});
+  refresh();
+}
+refresh();
+setInterval(refresh, 5000);
+</script>
+</body>
+</html>

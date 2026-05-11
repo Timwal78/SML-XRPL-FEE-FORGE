@@ -1,0 +1,24 @@
+%% TIPHAWK — tip execution sequence
+sequenceDiagram
+    autonumber
+    participant U as Tweeter
+    participant X as X API v2 stream
+    participant L as twitter_listener
+    participant T as tip_engine
+    participant F as fee_engine
+    participant XRPL as XRP Ledger
+    participant D as Discord
+    participant DB as ledger.db
+
+    U->>X: posts "@tiphawk_bot tip @sam 5 XRP"
+    X-->>L: streamed tweet (filtered_stream rule)
+    L->>L: parse author + text
+    L->>T: parse_tip() → TipCommand
+    T->>T: resolve_address(@sam) from registry
+    T->>F: calc_tip_split(5 XRP) → (4.90, 0.10)
+    T->>DB: record(status=pending)
+    T->>XRPL: send_xrp(operator_wallet → @sam, 4.90)
+    XRPL-->>T: tx_hash, validated
+    T->>DB: update_status(sent, tx_hash)
+    T->>D: send_rich(embed) + send_compact(text)
+    D-->>U: alert in Discord channel

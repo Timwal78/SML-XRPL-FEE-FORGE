@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Acme Pro · RLUSD Rails Widget Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg: #0a0d12;
+  --bg-elev: #0f141b;
+  --line: #1f2733;
+  --text: #e6edf3;
+  --text-dim: #7d8590;
+  --accent: #ff6b35;
+  --accent-2: #ffd700;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Space Grotesk', sans-serif; min-height: 100vh; }
+body::before {
+  content: ""; position: fixed; inset: 0;
+  background:
+    radial-gradient(800px 500px at 90% 0%, rgba(255,107,53,0.10), transparent 60%),
+    radial-gradient(800px 500px at 0% 100%, rgba(255,215,0,0.06), transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+.wrap { position: relative; z-index: 1; max-width: 980px; margin: 0 auto; padding: 32px; }
+
+header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 0; border-bottom: 1px solid var(--line); margin-bottom: 60px;
+}
+.logo { font-weight: 700; letter-spacing: 0.04em; font-size: 18px; }
+.nav { display: flex; gap: 28px; font-size: 14px; color: var(--text-dim); }
+.demo-pill {
+  font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.2em;
+  text-transform: uppercase; color: var(--accent-2);
+  background: rgba(255,215,0,0.08); border: 1px solid rgba(255,215,0,0.2);
+  padding: 4px 10px; border-radius: 4px;
+}
+
+.hero { text-align: center; margin-bottom: 60px; }
+.hero h1 { font-size: 48px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 16px; }
+.hero h1 span { background: linear-gradient(135deg, var(--accent-2), var(--accent)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero p { color: var(--text-dim); font-size: 18px; max-width: 600px; margin: 0 auto; line-height: 1.5; }
+
+.product {
+  display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px;
+  background: var(--bg-elev); border: 1px solid var(--line);
+  padding: 40px; border-radius: 16px; align-items: center;
+}
+.product-img {
+  aspect-ratio: 1; border-radius: 12px; position: relative; overflow: hidden;
+  background: linear-gradient(135deg, #1c2128 0%, #0a0d12 100%);
+  display: flex; align-items: center; justify-content: center;
+}
+.product-img::before {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(circle at 30% 30%, rgba(255,107,53,0.4), transparent 60%);
+}
+.product-img-glyph {
+  font-family: 'JetBrains Mono', monospace; font-size: 96px; font-weight: 800;
+  letter-spacing: -0.08em;
+  background: linear-gradient(135deg, var(--accent-2), var(--accent));
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  position: relative; z-index: 1;
+}
+.product h2 { font-size: 28px; font-weight: 700; margin-bottom: 8px; line-height: 1.2; }
+.product .tagline { color: var(--accent-2); font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 18px; }
+.product .desc { color: var(--text-dim); font-size: 15px; line-height: 1.6; margin-bottom: 24px; }
+.product .price { font-size: 36px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 6px; }
+.product .price .currency { font-size: 14px; color: var(--text-dim); font-weight: 500; margin-left: 4px; letter-spacing: 0.1em; }
+.product .micro { color: var(--text-dim); font-size: 11px; font-family: 'JetBrains Mono', monospace; margin-bottom: 24px; letter-spacing: 0.1em; }
+
+.features {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+  margin-top: 80px;
+}
+.feat {
+  background: var(--bg-elev); border: 1px solid var(--line);
+  padding: 24px; border-radius: 12px;
+}
+.feat .icon { width: 32px; height: 32px; border-radius: 8px; background: linear-gradient(135deg, var(--accent-2), var(--accent)); margin-bottom: 14px; display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--bg); }
+.feat h3 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+.feat p { font-size: 13px; color: var(--text-dim); line-height: 1.5; }
+
+.embed-snippet {
+  background: var(--bg-elev); border: 1px solid var(--line);
+  border-radius: 12px; padding: 24px; margin-top: 60px;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.7;
+  color: var(--text-dim); overflow-x: auto;
+}
+.embed-snippet .lbl {
+  color: var(--accent); font-size: 10px; letter-spacing: 0.2em;
+  text-transform: uppercase; display: block; margin-bottom: 12px;
+}
+.embed-snippet pre { color: var(--text); white-space: pre; }
+.embed-snippet .tag { color: #79c0ff; }
+.embed-snippet .attr { color: #d2a8ff; }
+.embed-snippet .str { color: #a5d6ff; }
+
+footer { margin-top: 80px; padding-top: 24px; border-top: 1px solid var(--line); text-align: center; color: var(--text-dim); font-size: 12px; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.1em; }
+footer a { color: var(--accent); text-decoration: none; }
+
+@media (max-width: 768px) {
+  .product { grid-template-columns: 1fr; }
+  .features { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 32px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">ACME · PRO</div>
+    <div class="nav">
+      <span>Pricing</span>
+      <span>Docs</span>
+      <span class="demo-pill">RAILS DEMO</span>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1>Pay anything in <span>seconds</span>, not days.</h1>
+    <p>Demo merchant page powered by the SML XRPL FEE FORGE — RLUSD Rails widget. Click the button below to see the embeddable checkout in action.</p>
+  </section>
+
+  <section class="product">
+    <div class="product-img"><div class="product-img-glyph">A+</div></div>
+    <div>
+      <div class="tagline">Annual subscription · Renewal</div>
+      <h2>Acme Pro · Trader Edition</h2>
+      <p class="desc">Full access to institutional-grade signals, real-time alerts, and the entire indicator library. Settled instantly via the XRP Ledger — no card networks, no chargebacks, no FX.</p>
+      <div class="price">99.00<span class="currency">RLUSD</span></div>
+      <div class="micro">~3s settlement · 0.5% fee · self-custody</div>
+
+      <!-- THIS is the widget mount point -->
+      <div data-rlusd-rails
+           data-merchant-id="acme-pro-demo"
+           data-merchant-addr="rN7n7otQDd6FczFgLdSqtcsAUxDkw6fzRH"
+           data-amount="99.00"
+           data-currency="RLUSD"
+           data-description="Acme Pro · Trader Edition · Annual"
+           data-api=""></div>
+    </div>
+  </section>
+
+  <section class="features">
+    <div class="feat">
+      <div class="icon">⚡</div>
+      <h3>3-second finality</h3>
+      <p>Payments confirm in roughly one ledger close. No "pending for 3 days" experience.</p>
+    </div>
+    <div class="feat">
+      <div class="icon">$</div>
+      <h3>0.5% flat fee</h3>
+      <p>One-fifth of standard processor fees. No interchange, no PCI scope, no chargebacks.</p>
+    </div>
+    <div class="feat">
+      <div class="icon">⌖</div>
+      <h3>RLUSD-native</h3>
+      <p>Settle in regulated stablecoin. Full reporting on-chain. One trustline to start.</p>
+    </div>
+  </section>
+
+  <section class="embed-snippet">
+    <span class="lbl">Embed snippet — drop this on any page</span>
+    <pre>&lt;<span class="tag">script</span> <span class="attr">src</span>=<span class="str">"https://your-rails.com/widget.js"</span>&gt;&lt;/<span class="tag">script</span>&gt;
+&lt;<span class="tag">div</span> <span class="attr">data-rlusd-rails</span>
+     <span class="attr">data-merchant-id</span>=<span class="str">"acme-pro"</span>
+     <span class="attr">data-merchant-addr</span>=<span class="str">"rYourMerchantAddr..."</span>
+     <span class="attr">data-amount</span>=<span class="str">"99.00"</span>
+     <span class="attr">data-currency</span>=<span class="str">"RLUSD"</span>
+     <span class="attr">data-description</span>=<span class="str">"Pro plan, monthly"</span>
+     <span class="attr">data-api</span>=<span class="str">"https://your-rails.com"</span>&gt;
+&lt;/<span class="tag">div</span>&gt;</pre>
+  </section>
+
+  <footer>
+    DEMO · POWERED BY <a href="/">SML XRPL FEE FORGE</a> · RLUSD RAILS v1.0
+  </footer>
+</div>
+
+<script>
+  // Auto-set the data-api to current origin so the demo works locally
+  document.querySelectorAll('[data-rlusd-rails]').forEach(el => {
+    if (!el.getAttribute('data-api')) {
+      el.setAttribute('data-api', window.location.origin);
+    }
+  });
+</script>
+<script src="/widget.js"></script>
+</body>
+</html>
