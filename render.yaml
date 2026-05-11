@@ -4,7 +4,7 @@ services:
     env: docker
     dockerfilePath: ./Dockerfile
     plan: free
-    healthCheckPath: /health
+    healthCheckPath: /api/health
     envVars:
       - key: XRPL_NETWORK
         value: mainnet
@@ -32,7 +32,7 @@ services:
     env: docker
     dockerfilePath: ./Dockerfile.rails
     plan: free
-    healthCheckPath: /health
+    healthCheckPath: /api/health
     envVars:
       - key: XRPL_NETWORK
         value: mainnet
