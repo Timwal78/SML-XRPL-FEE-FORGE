@@ -1,6 +1,6 @@
 services:
   # ---------------------------------------------------------------------------
-  # Existing SML RAILS service (unchanged)
+  # RLUSD Rails checkout engine (unchanged)
   # ---------------------------------------------------------------------------
   - type: web
     name: sml-rails
@@ -21,11 +21,11 @@ services:
         value: "8002"
 
   # ---------------------------------------------------------------------------
-  # x402 Gateway — Go HTTP server (payment middleware + BYOK inference)
-  # Render assigns PORT automatically; the Go server reads it from env.
+  # forge-gateway — x402 payment middleware + BYOK inference (Go)
+  # Render sets PORT automatically; the Go server reads it from env.
   # ---------------------------------------------------------------------------
   - type: web
-    name: x402-gateway
+    name: forge-gateway
     env: docker
     dockerfilePath: ./x402-gateway/Dockerfile
     dockerContext: ./x402-gateway
@@ -36,7 +36,7 @@ services:
       - key: REDIS_URL
         fromService:
           type: redis
-          name: x402-redis
+          name: forge-redis
           property: connectionString
       - key: MERCHANT_WALLET_ADDRESS
         sync: false
@@ -60,12 +60,11 @@ services:
         value: "60"
 
   # ---------------------------------------------------------------------------
-  # x402 Dashboard — React SPA (Render Static Site, free tier)
-  # VITE_GATEWAY_URL is set to the predictable Render URL of x402-gateway.
-  # Update this if you rename the gateway service or use a custom domain.
+  # forge-dashboard — React revenue command UI (Render Static Site)
+  # VITE_GATEWAY_URL matches the forge-gateway Render service URL.
   # ---------------------------------------------------------------------------
   - type: web
-    name: x402-dashboard
+    name: forge-dashboard
     env: static
     buildCommand: cd dashboard && npm ci && npm run build
     staticPublishPath: ./dashboard/dist
@@ -83,13 +82,13 @@ services:
         value: nosniff
     envVars:
       - key: VITE_GATEWAY_URL
-        value: "https://x402-gateway.onrender.com"
+        value: "https://forge-gateway.onrender.com"
 
 # ---------------------------------------------------------------------------
-# Redis — rate limiting & metrics store
+# forge-redis — rate limiting & metrics store
 # ---------------------------------------------------------------------------
 databases:
-  - name: x402-redis
+  - name: forge-redis
     type: redis
     plan: free
     maxmemoryPolicy: allkeys-lru
