@@ -127,13 +127,6 @@ def make_invoice_alert_fields(
     return fields
 
 
-def get_tiphawk_channel() -> AlertChannel:
-    return AlertChannel(
-        os.environ.get("DISCORD_WEBHOOK_TIPHAWK"),
-        brand="TIPHAWK • SML",
-    )
-
-
 def get_rails_channel() -> AlertChannel:
     return AlertChannel(
         os.environ.get("DISCORD_WEBHOOK_RAILS"),

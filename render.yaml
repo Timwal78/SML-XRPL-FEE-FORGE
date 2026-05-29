@@ -1,33 +1,5 @@
 services:
   - type: web
-    name: sml-tiphawk
-    env: docker
-    dockerfilePath: ./Dockerfile
-    plan: free
-    healthCheckPath: /api/health
-    envVars:
-      - key: XRPL_NETWORK
-        value: mainnet
-      - key: XRPL_WS_MAINNET
-        value: wss://xrplcluster.com
-      - key: OPERATOR_WALLET_SEED
-        sync: false
-      - key: ANTHROPIC_API_KEY
-        sync: false
-      - key: TWITTER_API_KEY
-        sync: false
-      - key: TWITTER_API_SECRET
-        sync: false
-      - key: TWITTER_ACCESS_TOKEN
-        sync: false
-      - key: TWITTER_ACCESS_SECRET
-        sync: false
-      - key: DISCORD_WEBHOOK_TIPHAWK
-        sync: false
-      - key: TIPHAWK_PORT
-        value: "8001"
-
-  - type: web
     name: sml-rails
     env: docker
     dockerfilePath: ./Dockerfile.rails
