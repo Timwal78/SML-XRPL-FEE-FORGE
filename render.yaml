@@ -1,6 +1,6 @@
 services:
   # ---------------------------------------------------------------------------
-  # RLUSD Rails checkout engine
+  # RLUSD Rails checkout engine (unchanged)
   # ---------------------------------------------------------------------------
   - type: web
     name: sml-rails
@@ -32,6 +32,7 @@ services:
 
   # ---------------------------------------------------------------------------
   # forge-gateway — x402 payment middleware + BYOK inference (Go)
+  # Render sets PORT automatically; the Go server reads it from env.
   # ---------------------------------------------------------------------------
   - type: web
     name: forge-gateway
@@ -64,17 +65,20 @@ services:
       - key: XRPL_NOTARY_WALLET_SEED
         sync: false
       - key: XRPL_NETWORK
-        value: "testnet"
+        value: "mainnet"
+      - key: XRPL_RPC_URL
+        value: "https://xrplcluster.com"
       - key: RATE_LIMIT_RPM
         value: "60"
 
   # ---------------------------------------------------------------------------
-  # forge-dashboard — React revenue command UI (Render Static Site)
+  # sml-forge-dashboard — React revenue command UI (Render Static Site)
+  # VITE_GATEWAY_URL matches the forge-gateway Render service URL.
   # ---------------------------------------------------------------------------
   - type: web
-    name: forge-dashboard
+    name: sml-forge-dashboard
     env: static
-    buildCommand: cd dashboard && npm ci && npm run build
+    buildCommand: cd dashboard && npm install && npm run build
     staticPublishPath: ./dashboard/dist
     autoDeploy: true
     routes:
