@@ -11,7 +11,7 @@ COPY . .
 
 # -ldflags="-w -s" strips debug info and symbol table to minimise binary size.
 # CGO_ENABLED=0 produces a fully static binary suitable for the scratch image.
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+RUN CGO_ENABLED=0 GOOS=linux \
     go build -ldflags="-w -s" -o shadow-desk ./cmd/server
 
 # Stage 2: Minimal runtime — scratch + SSL bundle.

@@ -11,6 +11,7 @@ import (
 // All fields are populated from environment variables; no config files are read.
 type Config struct {
 	Port                string
+	HostURL             string
 	IngestSecret        string
 	AlphaProviderWallet string
 	PlatformWallet      string
@@ -24,6 +25,7 @@ type Config struct {
 func Load() *Config {
 	cfg := &Config{
 		Port:                getEnv("PORT", "8080"),
+		HostURL:             getEnv("HOST_URL", ""),
 		IngestSecret:        getEnv("INGEST_SECRET", ""),
 		AlphaProviderWallet: getEnv("ALPHA_PROVIDER_WALLET", ""),
 		PlatformWallet:      getEnv("PLATFORM_WALLET", ""),

@@ -70,13 +70,41 @@ services:
         value: "60"
 
   # ---------------------------------------------------------------------------
+  # shadow-desk — x402 institutional alpha gateway (Go)
+  # TradingView signals ingested at POST /v1/ingest, served at GET /v1/alpha/stream
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: shadow-desk
+    env: docker
+    dockerfilePath: ./shadow-desk/Dockerfile
+    dockerContext: ./shadow-desk
+    plan: free
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: "8080"
+      - key: HOST_URL
+        value: "https://shadow-desk.onrender.com"
+      - key: INGEST_SECRET
+        sync: false
+      - key: ALPHA_PROVIDER_WALLET
+        sync: false
+      - key: PLATFORM_WALLET
+        sync: false
+      - key: FACILITATOR_URL
+        value: "https://x402.org/facilitator"
+      - key: ADMIN_API_KEY
+        sync: false
+
+  # ---------------------------------------------------------------------------
   # sml-forge-dashboard — React revenue command UI (Render Static Site)
   # VITE_GATEWAY_URL must match the actual Render-assigned gateway URL.
   # ---------------------------------------------------------------------------
   - type: web
     name: sml-forge-dashboard
     env: static
-    buildCommand: cd dashboard && npm install && npm run build
+    buildCommand: cd dashboard && npm ci && npm run build
     staticPublishPath: ./dashboard/dist
     autoDeploy: true
     routes:
