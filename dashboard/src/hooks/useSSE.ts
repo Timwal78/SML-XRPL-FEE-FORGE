@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import type { SSEMessage, StatsSnapshot, PaymentEvent, XRPLNotaryEntry } from '../types'
 
-const SSE_URL = '/api/stream'
+// VITE_GATEWAY_URL is set at build time:
+//   - Local dev: empty string (Vite proxies /api/ to localhost:8080)
+//   - Render / production: https://x402-gateway.onrender.com
+const GATEWAY_BASE = (import.meta.env.VITE_GATEWAY_URL as string) ?? ''
+const SSE_URL = `${GATEWAY_BASE}/api/stream`
+
 const MAX_FEED_ITEMS = 50
 
 export function useSSE() {
@@ -28,7 +33,7 @@ export function useSSE() {
 
     es.onmessage = (e: MessageEvent) => {
       try {
-        const msg: SSEMessage = JSON.parse(e.data)
+        const msg: SSEMessage = JSON.parse(e.data as string)
         if (msg.type === 'snapshot') {
           setSnapshot(msg.data)
           if (msg.data.recentNotary) {
@@ -48,7 +53,7 @@ export function useSSE() {
         } else if (msg.type === 'notary') {
           setNotaryLog(prev => [msg.data, ...prev].slice(0, MAX_FEED_ITEMS))
         }
-      } catch {}
+      } catch { /* malformed SSE frame — skip */ }
     }
 
     es.onerror = () => {
@@ -73,6 +78,5 @@ export function useSSE() {
 }
 
 function addUsdc(a: string, b: string): string {
-  const sum = parseFloat(a || '0') + parseFloat(b || '0')
-  return sum.toFixed(6)
+  return (parseFloat(a || '0') + parseFloat(b || '0')).toFixed(6)
 }

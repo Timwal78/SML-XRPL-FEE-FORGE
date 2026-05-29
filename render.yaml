@@ -1,4 +1,7 @@
 services:
+  # ---------------------------------------------------------------------------
+  # Existing SML RAILS service (unchanged)
+  # ---------------------------------------------------------------------------
   - type: web
     name: sml-rails
     env: docker
@@ -16,3 +19,77 @@ services:
         sync: false
       - key: RAILS_PORT
         value: "8002"
+
+  # ---------------------------------------------------------------------------
+  # x402 Gateway — Go HTTP server (payment middleware + BYOK inference)
+  # Render assigns PORT automatically; the Go server reads it from env.
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: x402-gateway
+    env: docker
+    dockerfilePath: ./x402-gateway/Dockerfile
+    dockerContext: ./x402-gateway
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: x402-redis
+          property: connectionString
+      - key: MERCHANT_WALLET_ADDRESS
+        sync: false
+      - key: PAYMENT_AMOUNT_USDC_DROPS
+        value: "500000"
+      - key: X402_FACILITATOR_URL
+        value: "https://x402.org/facilitator"
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: BYOK_PROVIDER
+        value: "auto"
+      - key: XRPL_NOTARY_WALLET_ADDRESS
+        sync: false
+      - key: XRPL_NOTARY_WALLET_SEED
+        sync: false
+      - key: XRPL_NETWORK
+        value: "testnet"
+      - key: RATE_LIMIT_RPM
+        value: "60"
+
+  # ---------------------------------------------------------------------------
+  # x402 Dashboard — React SPA (Render Static Site, free tier)
+  # VITE_GATEWAY_URL is set to the predictable Render URL of x402-gateway.
+  # Update this if you rename the gateway service or use a custom domain.
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: x402-dashboard
+    env: static
+    buildCommand: cd dashboard && npm ci && npm run build
+    staticPublishPath: ./dashboard/dist
+    autoDeploy: true
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+    envVars:
+      - key: VITE_GATEWAY_URL
+        value: "https://x402-gateway.onrender.com"
+
+# ---------------------------------------------------------------------------
+# Redis — rate limiting & metrics store
+# ---------------------------------------------------------------------------
+databases:
+  - name: x402-redis
+    type: redis
+    plan: free
+    maxmemoryPolicy: allkeys-lru
