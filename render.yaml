@@ -71,11 +71,11 @@ services:
         value: "60"
 
   # ---------------------------------------------------------------------------
-  # forge-dashboard — React revenue command UI (Render Static Site)
+  # sml-forge-dashboard — React revenue command UI (Render Static Site)
   # VITE_GATEWAY_URL matches the forge-gateway Render service URL.
   # ---------------------------------------------------------------------------
   - type: web
-    name: forge-dashboard
+    name: sml-forge-dashboard
     env: static
     buildCommand: cd dashboard && npm ci && npm run build
     staticPublishPath: ./dashboard/dist
