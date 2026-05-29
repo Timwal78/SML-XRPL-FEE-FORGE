@@ -39,9 +39,11 @@ func Verify(facilitatorURL, proof, alphaWallet string) (string, error) {
 	body := verifyRequest{
 		PaymentProof: proof,
 		Network:      "base",
-		Asset:        "USDC",
-		Amount:       "5000",
-		PayTo:        alphaWallet,
+		// USDC contract address on Base mainnet — facilitator requires the ERC-20
+		// contract address, not the ticker symbol.
+		Asset:  "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+		Amount: "5000",
+		PayTo:  alphaWallet,
 	}
 
 	buf, err := json.Marshal(body)

@@ -70,6 +70,110 @@ services:
         value: "60"
 
   # ---------------------------------------------------------------------------
+  # shadow-desk — x402 institutional alpha gateway (Go)
+  # TradingView signals ingested at POST /v1/ingest, served at GET /v1/alpha/stream
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: shadow-desk
+    env: docker
+    dockerfilePath: ./shadow-desk/Dockerfile
+    dockerContext: ./shadow-desk
+    plan: free
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: PORT
+        value: "8080"
+      - key: HOST_URL
+        value: "https://shadow-desk.onrender.com"
+      - key: INGEST_SECRET
+        sync: false
+      - key: ALPHA_PROVIDER_WALLET
+        sync: false
+      - key: PLATFORM_WALLET
+        sync: false
+      - key: FACILITATOR_URL
+        value: "https://x402.org/facilitator"
+      - key: ADMIN_API_KEY
+        sync: false
+
+  # ---------------------------------------------------------------------------
+  # sml-copytrader-db — PostgreSQL for copy-trader persistent state
+  # (leaders, followers, mirror trades)
+  # ---------------------------------------------------------------------------
+  - type: pgsql
+    name: sml-copytrader-db
+    plan: free
+    ipAllowList: []
+
+  # ---------------------------------------------------------------------------
+  # sml-copytrader — XRPL copy-trading engine
+  # Watches leader wallets on XRPL and mirrors OfferCreate transactions
+  # to subscribed follower wallets, proportionally sized.
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: sml-copytrader
+    env: docker
+    dockerfilePath: ./Dockerfile.copytrader
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: COPYTRADER_DB_URL
+        fromService:
+          type: pgsql
+          name: sml-copytrader-db
+          property: connectionString
+      - key: OPERATOR_WALLET_SEED
+        sync: false
+      - key: OPERATOR_WALLET_ADDRESS
+        sync: false
+      - key: XRPL_NETWORK
+        value: "mainnet"
+      - key: XRPL_RPC_URL
+        value: "https://xrplcluster.com"
+      - key: XRPL_WS_MAINNET
+        value: "wss://xrplcluster.com"
+      - key: DISCORD_WEBHOOK_COPYTRADER
+        sync: false
+
+  # ---------------------------------------------------------------------------
+  # sml-launchpad-db — PostgreSQL for launchpad token + trade history
+  # ---------------------------------------------------------------------------
+  - type: pgsql
+    name: sml-launchpad-db
+    plan: free
+    ipAllowList: []
+
+  # ---------------------------------------------------------------------------
+  # sml-launchpad — XRPL memecoin launchpad (pump.fun style)
+  # Bonding curve token creation → auto-migration to XRPL native AMM at goal
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: sml-launchpad
+    env: docker
+    dockerfilePath: ./Dockerfile.launchpad
+    plan: free
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: LAUNCHPAD_DB_URL
+        fromService:
+          type: pgsql
+          name: sml-launchpad-db
+          property: connectionString
+      - key: OPERATOR_WALLET_SEED
+        sync: false
+      - key: OPERATOR_WALLET_ADDRESS
+        sync: false
+      - key: XRPL_NETWORK
+        value: "mainnet"
+      - key: XRPL_RPC_URL
+        value: "https://xrplcluster.com"
+      - key: DISCORD_WEBHOOK_LAUNCHPAD
+        sync: false
+
+  # ---------------------------------------------------------------------------
   # sml-forge-dashboard — React revenue command UI (Render Static Site)
   # VITE_GATEWAY_URL must match the actual Render-assigned gateway URL.
   # ---------------------------------------------------------------------------
