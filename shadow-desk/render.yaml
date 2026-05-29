@@ -1,0 +1,19 @@
+# Shadow Desk x402 API Gateway
+# Render web service — starter plan = always-on, no cold starts.
+services:
+  - type: web
+    name: shadow-desk
+    runtime: go
+    plan: starter
+    healthCheckPath: /healthz
+    rootDir: shadow-desk
+    buildCommand: go build -ldflags="-w -s" -o shadow-desk ./cmd/server
+    startCommand: ./shadow-desk
+    envVars:
+      - { key: PORT, value: "8080" }
+      - { key: ALPHA_PROVIDER_WALLET, sync: false }
+      - { key: PLATFORM_WALLET, sync: false }
+      - { key: INGEST_SECRET, sync: false }
+      - { key: ADMIN_API_KEY, sync: false }
+      - { key: FACILITATOR_URL, value: "https://x402.org/facilitator" }
+      - { key: USE_TESTNET, value: "false" }
