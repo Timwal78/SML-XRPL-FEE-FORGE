@@ -14,16 +14,16 @@ import (
 )
 
 type client struct {
-	ch     chan []byte
-	done   chan struct{}
+	ch   chan []byte
+	done chan struct{}
 }
 
-// Hub manages SSE clients and aggregates payment statistics.
+// Hub manages SSE clients and aggregates payment statistics via Redis.
 type Hub struct {
-	mu       sync.RWMutex
-	clients  map[*client]struct{}
+	mu        sync.RWMutex
+	clients   map[*client]struct{}
 	broadcast chan []byte
-	rdb      *redis.Client
+	rdb       *redis.Client
 }
 
 func NewHub(rdb *redis.Client) *Hub {
@@ -41,7 +41,7 @@ func (h *Hub) Run() {
 			select {
 			case c.ch <- msg:
 			default:
-				// slow client — drop
+				// slow client — drop event rather than block
 			}
 		}
 		h.mu.RUnlock()
@@ -51,13 +51,13 @@ func (h *Hub) Run() {
 func (h *Hub) Publish(event interface{}) {
 	b, err := json.Marshal(event)
 	if err != nil {
-		log.Error().Err(err).Msg("hub marshal failed")
+		log.Error().Err(err).Msg("hub: marshal failed")
 		return
 	}
 	select {
 	case h.broadcast <- b:
 	default:
-		log.Warn().Msg("hub broadcast channel full, dropping event")
+		log.Warn().Msg("hub: broadcast channel full, dropping event")
 	}
 }
 
@@ -67,7 +67,6 @@ func (h *Hub) ServeSSE(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "streaming unsupported", http.StatusInternalServerError)
 		return
 	}
-
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
@@ -77,7 +76,6 @@ func (h *Hub) ServeSSE(w http.ResponseWriter, r *http.Request) {
 	h.mu.Lock()
 	h.clients[c] = struct{}{}
 	h.mu.Unlock()
-
 	defer func() {
 		h.mu.Lock()
 		delete(h.clients, c)
@@ -85,6 +83,7 @@ func (h *Hub) ServeSSE(w http.ResponseWriter, r *http.Request) {
 		close(c.done)
 	}()
 
+	// Send snapshot on connect
 	snap := h.buildSnapshot(r.Context())
 	if b, err := json.Marshal(map[string]interface{}{"type": "snapshot", "data": snap}); err == nil {
 		fmt.Fprintf(w, "data: %s\n\n", b)
@@ -115,20 +114,24 @@ func (h *Hub) HandleStats(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(snap)
 }
 
-func (h *Hub) RecordPayment(ctx context.Context, payer, amountRaw string) {
+// RecordPayment persists payment metrics in Redis.
+func (h *Hub) RecordPayment(ctx context.Context, payer, amountDropsStr string) {
+	amountDrops := parseDrops(amountDropsStr)
 	pipe := h.rdb.Pipeline()
-	pipe.IncrByFloat(ctx, "x402:total_usdc_drops", 0) // updated by caller
+	nowMs := float64(time.Now().UnixMilli())
 	pipe.Incr(ctx, "x402:total_tx")
-	pipe.ZAdd(ctx, "x402:tx_window", redis.Z{Score: float64(time.Now().UnixMilli()), Member: time.Now().UnixNano()})
-	pipe.ZRemRangeByScore(ctx, "x402:tx_window", "0", fmt.Sprintf("%d", time.Now().Add(-time.Hour).UnixMilli()))
-	pipe.IncrByFloat(ctx, "x402:total_usdc_drops", parseDrops(amountRaw))
+	pipe.IncrByFloat(ctx, "x402:total_usdc_drops", amountDrops)
+	pipe.ZAdd(ctx, "x402:tx_window", redis.Z{Score: nowMs, Member: fmt.Sprintf("%d", time.Now().UnixNano())})
+	pipe.ZRemRangeByScore(ctx, "x402:tx_window", "0",
+		fmt.Sprintf("%d", time.Now().Add(-time.Hour).UnixMilli()))
 	pipe.HIncrBy(ctx, "x402:agent:"+payer, "requests", 1)
-	pipe.HIncrByFloat(ctx, "x402:agent:"+payer, "usdc_drops", parseDrops(amountRaw))
+	pipe.HIncrByFloat(ctx, "x402:agent:"+payer, "usdc_drops", amountDrops)
 	pipe.HSet(ctx, "x402:agent:"+payer, "last_seen", time.Now().Unix())
 	pipe.SAdd(ctx, "x402:agents", payer)
-	pipe.Exec(ctx)
+	_, _ = pipe.Exec(ctx)
 }
 
+// IncrAgentReputation increments the XRPL-backed reputation score for a payer.
 func (h *Hub) IncrAgentReputation(ctx context.Context, payer string) {
 	h.rdb.HIncrBy(ctx, "x402:agent:"+payer, "reputation", 1)
 }
@@ -142,13 +145,13 @@ func (h *Hub) buildSnapshot(ctx context.Context) models.StatsSnapshot {
 
 	agentWallets, _ := h.rdb.SMembers(ctx, "x402:agents").Result()
 	agents := make([]models.AgentStats, 0, len(agentWallets))
-	for _, w := range agentWallets {
-		reqs, _ := h.rdb.HGet(ctx, "x402:agent:"+w, "requests").Int64()
-		drops, _ := h.rdb.HGet(ctx, "x402:agent:"+w, "usdc_drops").Float64()
-		rep, _ := h.rdb.HGet(ctx, "x402:agent:"+w, "reputation").Int64()
-		ts, _ := h.rdb.HGet(ctx, "x402:agent:"+w, "last_seen").Int64()
+	for _, wallet := range agentWallets {
+		reqs, _ := h.rdb.HGet(ctx, "x402:agent:"+wallet, "requests").Int64()
+		drops, _ := h.rdb.HGet(ctx, "x402:agent:"+wallet, "usdc_drops").Float64()
+		rep, _ := h.rdb.HGet(ctx, "x402:agent:"+wallet, "reputation").Int64()
+		ts, _ := h.rdb.HGet(ctx, "x402:agent:"+wallet, "last_seen").Int64()
 		agents = append(agents, models.AgentStats{
-			Wallet:     w,
+			Wallet:     wallet,
 			Requests:   reqs,
 			USDCSpent:  dropsToUSDC(drops),
 			Reputation: rep,

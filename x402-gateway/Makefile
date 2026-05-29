@@ -1,9 +1,14 @@
-.PHONY: build run test lint tidy docker
+.PHONY: build run test lint tidy setup docker clean
 
 BINARY=x402-gateway
 GO=go
 
-build:
+# First run: download + tidy deps (generates correct go.sum)
+setup:
+	$(GO) mod download
+	$(GO) mod tidy
+
+build: setup
 	$(GO) build -ldflags="-s -w" -trimpath -o $(BINARY) ./cmd/server
 
 run:
@@ -25,5 +30,9 @@ clean:
 docker:
 	docker build -t sml/x402-gateway:latest .
 
-docker-push:
-	docker push sml/x402-gateway:latest
+dev:
+	@echo "Starting gateway + dashboard in dev mode..."
+	@$(MAKE) -j2 run dashboard-dev
+
+dashboard-dev:
+	cd ../dashboard && npm run dev

@@ -7,7 +7,6 @@ package inference
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -18,11 +17,10 @@ import (
 )
 
 const (
-	anthropicMessagesURL = "https://api.anthropic.com/v1/messages"
-	openAICompletionsURL = "https://api.openai.com/v1/chat/completions"
-	anthropicVersion     = "2023-06-01"
+	anthropicMessagesURL  = "https://api.anthropic.com/v1/messages"
+	openAICompletionsURL  = "https://api.openai.com/v1/chat/completions"
+	anthropicVersion      = "2023-06-01"
 	defaultAnthropicModel = "claude-sonnet-4-6"
-	defaultOpenAIModel    = "gpt-4o"
 )
 
 // BYOKEngine proxies LLM requests injecting operator-owned API keys.
@@ -54,23 +52,18 @@ func NewBYOKEngine() *BYOKEngine {
 }
 
 // HandleCompletions proxies OpenAI-style chat completions requests.
-// Accepts the OpenAI /v1/chat/completions format and routes to the
-// configured provider.
 func (e *BYOKEngine) HandleCompletions(w http.ResponseWriter, r *http.Request) {
-	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20)) // 1 MB cap
+	body, err := io.ReadAll(io.LimitReader(r.Body, 1<<20))
 	if err != nil {
 		http.Error(w, `{"error":"failed to read request body"}`, http.StatusBadRequest)
 		return
 	}
-
 	var reqBody map[string]interface{}
 	if err := json.Unmarshal(body, &reqBody); err != nil {
 		http.Error(w, `{"error":"invalid JSON"}`, http.StatusBadRequest)
 		return
 	}
-
-	provider := e.selectProvider(reqBody)
-	switch provider {
+	switch e.selectProvider(reqBody) {
 	case "anthropic":
 		e.proxyAnthropic(w, r, reqBody)
 	case "openai":
@@ -104,22 +97,17 @@ func (e *BYOKEngine) proxyAnthropic(w http.ResponseWriter, r *http.Request, reqB
 		http.Error(w, `{"error":"anthropic key not configured"}`, http.StatusServiceUnavailable)
 		return
 	}
-
-	// Ensure a model is set; use default if not specified.
 	if _, ok := reqBody["model"]; !ok {
 		reqBody["model"] = defaultAnthropicModel
 	}
-	// Ensure max_tokens is set (required by Anthropic API).
 	if _, ok := reqBody["max_tokens"]; !ok {
 		reqBody["max_tokens"] = 4096
 	}
-
 	payload, err := json.Marshal(reqBody)
 	if err != nil {
 		http.Error(w, `{"error":"marshal failed"}`, http.StatusInternalServerError)
 		return
 	}
-
 	upstream, err := http.NewRequestWithContext(r.Context(), http.MethodPost, anthropicMessagesURL, bytes.NewReader(payload))
 	if err != nil {
 		http.Error(w, `{"error":"upstream request build failed"}`, http.StatusInternalServerError)
@@ -128,11 +116,9 @@ func (e *BYOKEngine) proxyAnthropic(w http.ResponseWriter, r *http.Request, reqB
 	upstream.Header.Set("Content-Type", "application/json")
 	upstream.Header.Set("anthropic-version", anthropicVersion)
 	upstream.Header.Set("x-api-key", e.anthropicKey)
-	// Forward streaming preference if set.
-	if r.Header.Get("Accept") != "" {
-		upstream.Header.Set("Accept", r.Header.Get("Accept"))
+	if accept := r.Header.Get("Accept"); accept != "" {
+		upstream.Header.Set("Accept", accept)
 	}
-
 	e.proxyResponse(w, upstream, "anthropic")
 }
 
@@ -159,18 +145,14 @@ func (e *BYOKEngine) proxyResponse(w http.ResponseWriter, req *http.Request, pro
 		return
 	}
 	defer resp.Body.Close()
-
-	// Forward all upstream headers to client.
 	for k, vs := range resp.Header {
 		for _, v := range vs {
 			w.Header().Add(k, v)
 		}
 	}
-	// Never leak upstream API key headers.
 	w.Header().Del("x-api-key")
 	w.Header().Del("Authorization")
 	w.Header().Set("X-BYOK-Provider", provider)
-
 	w.WriteHeader(resp.StatusCode)
 	if _, err := io.Copy(w, resp.Body); err != nil {
 		log.Error().Err(err).Str("provider", provider).Msg("response copy error")
@@ -188,15 +170,11 @@ func (e *BYOKEngine) selectProvider(body map[string]interface{}) string {
 			return "openai"
 		}
 	case "auto":
-		// Check if request has Anthropic-style fields.
-		if _, ok := body["messages"]; ok {
-			if model, ok := body["model"].(string); ok && strings.Contains(model, "claude") {
-				if e.anthropicKey != "" {
-					return "anthropic"
-				}
+		if model, ok := body["model"].(string); ok && strings.Contains(model, "claude") {
+			if e.anthropicKey != "" {
+				return "anthropic"
 			}
 		}
-		// Default: prefer Anthropic if available.
 		if e.anthropicKey != "" {
 			return "anthropic"
 		}
@@ -205,8 +183,4 @@ func (e *BYOKEngine) selectProvider(body map[string]interface{}) string {
 		}
 	}
 	return ""
-}
-
-func init() {
-	_ = fmt.Sprintf // ensure fmt is used
 }
