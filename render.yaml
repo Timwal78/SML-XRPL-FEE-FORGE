@@ -104,7 +104,7 @@ services:
   - type: web
     name: sml-forge-dashboard
     env: static
-    buildCommand: cd dashboard && npm ci && npm run build
+    buildCommand: cd dashboard && npm install && npm run build
     staticPublishPath: ./dashboard/dist
     autoDeploy: true
     routes:
