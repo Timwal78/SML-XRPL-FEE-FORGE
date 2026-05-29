@@ -22,7 +22,6 @@ services:
 
   # ---------------------------------------------------------------------------
   # forge-redis — rate limiting & metrics store
-  # Must be under services: (not databases:) for Redis in Render Blueprint
   # ---------------------------------------------------------------------------
   - type: redis
     name: forge-redis
@@ -32,7 +31,6 @@ services:
 
   # ---------------------------------------------------------------------------
   # forge-gateway — x402 payment middleware + BYOK inference (Go)
-  # Render sets PORT automatically; the Go server reads it from env.
   # ---------------------------------------------------------------------------
   - type: web
     name: forge-gateway
@@ -73,7 +71,7 @@ services:
 
   # ---------------------------------------------------------------------------
   # sml-forge-dashboard — React revenue command UI (Render Static Site)
-  # VITE_GATEWAY_URL matches the forge-gateway Render service URL.
+  # VITE_GATEWAY_URL must match the actual Render-assigned gateway URL.
   # ---------------------------------------------------------------------------
   - type: web
     name: sml-forge-dashboard
@@ -94,4 +92,4 @@ services:
         value: nosniff
     envVars:
       - key: VITE_GATEWAY_URL
-        value: "https://forge-gateway.onrender.com"
+        value: "https://forge-gateway-a822.onrender.com"
