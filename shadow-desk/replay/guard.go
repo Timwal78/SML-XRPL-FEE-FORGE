@@ -24,22 +24,24 @@ type Guard struct {
 // Default is the process-wide replay guard shared by all handlers.
 var Default = &Guard{seen: make(map[string]entry)}
 
-// IsSeen returns true if sig has been submitted before.
-// Called before Mark to give the caller a chance to reject before side-effects.
-func (g *Guard) IsSeen(sig string) bool {
+// MarkIfUnseen atomically checks whether sig has been seen and, if not, marks
+// it as spent in a single critical section. Returns true if the signature was
+// fresh (caller may proceed), false if it was already present (replay attack).
+//
+// This replaces the previous IsSeen+Mark two-step, which had a TOCTOU race:
+// two goroutines could both pass IsSeen before either called Mark, allowing
+// the same transaction to redeem two alpha responses.
+func (g *Guard) MarkIfUnseen(sig string) bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	_, exists := g.seen[sig]
-	return exists
-}
 
-// Mark records sig as spent. Must only be called after successful facilitator
-// verification to avoid poisoning the guard with invalid signatures.
-func (g *Guard) Mark(sig string) {
-	g.mu.Lock()
-	defer g.mu.Unlock()
+	if _, exists := g.seen[sig]; exists {
+		return false
+	}
+
 	g.seen[sig] = entry{seenAt: time.Now()}
 	g.prune()
+	return true
 }
 
 // prune removes entries older than retentionWindow.

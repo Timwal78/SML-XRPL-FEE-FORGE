@@ -35,8 +35,8 @@ type Response struct {
 // x402 lifecycle:
 //  1. No payment proof in headers  → emit HTTP 402 challenge.
 //  2. Proof present                → verify with facilitator.
-//  3. Replay check                 → reject already-spent signatures.
-//  4. Mark as spent + log billing  → serve alpha payload.
+//  3. Replay guard (atomic)        → reject already-spent signatures.
+//  4. Log billing event            → serve alpha payload.
 func Handler(cfg *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
@@ -71,8 +71,10 @@ func Handler(cfg *config.Config) http.HandlerFunc {
 			return
 		}
 
-		// Step 3 — Replay guard: reject transactions already redeemed.
-		if replay.Default.IsSeen(txSig) {
+		// Step 3 — Atomic replay guard.
+		// MarkIfUnseen checks-and-sets in one critical section, eliminating the
+		// TOCTOU race that would exist with a separate IsSeen + Mark pair.
+		if !replay.Default.MarkIfUnseen(txSig) {
 			slog.Warn("replay attack detected", "tx_sig", txSig, "ticker", ticker)
 			writeJSON(w, http.StatusConflict, map[string]string{
 				"error":   "replay_detected",
@@ -81,11 +83,9 @@ func Handler(cfg *config.Config) http.HandlerFunc {
 			return
 		}
 
-		// Step 4 — Mark spent and record billing event.
-		replay.Default.Mark(txSig)
+		// Step 4 — Record billing event and serve alpha payload.
 		billing.Default.Record(txSig, cfg.AlphaProviderWallet, cfg.PlatformWallet, ticker, priceUSDC)
 
-		// Step 5 — Serve the live alpha payload from the in-memory cache.
 		sig, found := cache.Default.Get(ticker)
 		if !found {
 			// Payment accepted but no signal ingested yet; return an empty payload.
