@@ -21,6 +21,15 @@ services:
         value: "8002"
 
   # ---------------------------------------------------------------------------
+  # forge-redis — rate limiting & metrics store
+  # ---------------------------------------------------------------------------
+  - type: redis
+    name: forge-redis
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
+
+  # ---------------------------------------------------------------------------
   # forge-gateway — x402 payment middleware + BYOK inference (Go)
   # Render sets PORT automatically; the Go server reads it from env.
   # ---------------------------------------------------------------------------
@@ -55,7 +64,9 @@ services:
       - key: XRPL_NOTARY_WALLET_SEED
         sync: false
       - key: XRPL_NETWORK
-        value: "testnet"
+        value: "mainnet"
+      - key: XRPL_RPC_URL
+        value: "https://xrplcluster.com"
       - key: RATE_LIMIT_RPM
         value: "60"
 
@@ -83,12 +94,3 @@ services:
     envVars:
       - key: VITE_GATEWAY_URL
         value: "https://forge-gateway.onrender.com"
-
-# ---------------------------------------------------------------------------
-# forge-redis — rate limiting & metrics store
-# ---------------------------------------------------------------------------
-databases:
-  - name: forge-redis
-    type: redis
-    plan: free
-    maxmemoryPolicy: allkeys-lru
