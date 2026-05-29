@@ -184,3 +184,42 @@ def get_launchpad_channel() -> AlertChannel:
         os.environ.get("DISCORD_WEBHOOK_LAUNCHPAD"),
         brand="MEME-LAUNCH • SML",
     )
+
+
+# -----------------------------------------------------------------------------
+# Cross-product payment notification
+# -----------------------------------------------------------------------------
+
+def _mask_wallet(wallet: str) -> str:
+    if len(wallet) > 10:
+        return f"{wallet[:6]}...{wallet[-4:]}"
+    return wallet
+
+
+async def fire_payment_alert(
+    wallet: str,
+    product: str,
+    endpoint: str,
+    amount: str,
+) -> None:
+    """Post a cross-product payment embed to DISCORD_WEBHOOK_PAYMENTS or DISCORD_WEBHOOK_ALL.
+
+    Designed for fire-and-forget via asyncio.create_task() — never raises.
+    """
+    url = os.environ.get("DISCORD_WEBHOOK_PAYMENTS") or os.environ.get("DISCORD_WEBHOOK_ALL")
+    if not url:
+        return
+    channel = AlertChannel(url, brand=f"{product} • SML")
+    try:
+        await channel.send_rich(
+            title=f"💰 PAYMENT RECEIVED — {product}",
+            color=COLOR_SUCCESS,
+            fields=[
+                {"name": "Wallet",   "value": f"`{_mask_wallet(wallet)}`", "inline": True},
+                {"name": "Product",  "value": product,                      "inline": True},
+                {"name": "Endpoint", "value": f"`{endpoint}`",              "inline": True},
+                {"name": "Amount",   "value": f"**{amount}**",              "inline": True},
+            ],
+        )
+    except Exception:
+        pass

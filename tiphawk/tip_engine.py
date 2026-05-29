@@ -21,6 +21,7 @@ from shared.rlusd import Money
 from shared.alerts import (
     get_tiphawk_channel,
     make_tip_alert_fields,
+    fire_payment_alert,
     COLOR_FEE,
     COLOR_ERROR,
 )
@@ -164,6 +165,13 @@ async def execute_tip(cmd: TipCommand) -> dict:
 
         tx_hash = res.get("hash") or res.get("tx_json", {}).get("hash", "")
         ledger.update_status(record.id, "sent", tx_hash=tx_hash)
+
+        asyncio.create_task(fire_payment_alert(
+            wallet=sender_addr,
+            product="TipHawk",
+            endpoint=f"tip @{cmd.sender_handle}→@{cmd.recipient_handle}",
+            amount=str(gross),
+        ))
 
         await alerts.send_rich(
             title="💰 TIP EXECUTED — TIPHAWK",

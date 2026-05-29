@@ -27,6 +27,7 @@ from shared.rlusd import Money, RLUSD_CURRENCY_HEX, RLUSD_ISSUER
 from shared.alerts import (
     get_rails_channel,
     make_invoice_alert_fields,
+    fire_payment_alert,
     COLOR_SUCCESS,
     COLOR_ERROR,
 )
@@ -116,6 +117,13 @@ async def handle_payment_tx(tx: dict) -> None:
             payment_tx_hash=payment_hash,
             payout_tx_hash=payout_hash,
         )
+
+        asyncio.create_task(fire_payment_alert(
+            wallet=customer_addr,
+            product="RLUSD Rails",
+            endpoint=f"invoice:{invoice.invoice_id}",
+            amount=f"{invoice.amount} {invoice.currency}",
+        ))
 
         alerts = get_rails_channel()
         await alerts.send_rich(
