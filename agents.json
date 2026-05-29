@@ -1,0 +1,78 @@
+{
+  "x402_services": [
+    {
+      "service": "SML Leviathan Matrix API",
+      "base_url": "https://sml-x402-signal-api.onrender.com",
+      "network": "base",
+      "chains": [
+        "base",
+        "polygon",
+        "solana"
+      ],
+      "payment": "USDC via x402",
+      "wallet": "0x4e14B249D9A4c9c9352D780eCEB508A8eB7a7700",
+      "endpoints": [
+        {
+          "path": "/matrix/equities/delayed",
+          "price": "free",
+          "desc": "65-min delayed equity snapshot \u2014 no payment, great for backtesting"
+        },
+        {
+          "path": "/matrix/subscribe/standard",
+          "price": "$250 USDC",
+          "desc": "Buy 30-day real-time Leviathan Matrix bearer token (Base/Polygon/Solana)"
+        },
+        {
+          "path": "/matrix/subscribe/vip",
+          "price": "$1000 USDC",
+          "desc": "Buy 30-day VIP zero-hop bearer token"
+        },
+        {
+          "path": "/matrix/:feed/live",
+          "price": "bearer token",
+          "desc": "Live Leviathan Matrix state \u2014 requires 30-day standard token"
+        },
+        {
+          "path": "/matrix/:feed/vip",
+          "price": "bearer token",
+          "desc": "Zero-hop VIP feed \u2014 requires 30-day VIP token"
+        }
+      ],
+      "loyalty": "tiered free-call credits + referral (?ref=0x..)",
+      "affiliate": {
+        "rate": 0.3,
+        "param": "?aff=0x..",
+        "settlement": "USDC on Base"
+      },
+      "response_signing": "ed25519",
+      "focus": "US equity short-squeeze signals \u2014 GME AMC IWM small-caps, 70 tickers"
+    },
+    {
+      "service": "Shadow Desk x402 Alpha API",
+      "base_url": "https://shadow-desk.onrender.com",
+      "network": "base",
+      "payment": "USDC via x402",
+      "wallet": "0x4e14B249D9A4c9c9352D780eCEB508A8eB7a7700",
+      "amount_usdc": "0.005",
+      "endpoints": [
+        {
+          "path": "/v1/alpha/stream?ticker=SYMBOL",
+          "price": "$0.005 USDC",
+          "desc": "Per-call institutional alpha stream \u2014 pays on Base mainnet"
+        },
+        {
+          "path": "/.well-known/mcp.json",
+          "price": "free",
+          "desc": "MCP auto-discovery manifest for autonomous AI agents"
+        },
+        {
+          "path": "/v1/ingest",
+          "price": "internal",
+          "desc": "TradingView Pine Script webhook receiver (authenticated)"
+        }
+      ],
+      "mcp_discovery": "https://shadow-desk.onrender.com/.well-known/mcp.json",
+      "focus": "Micro-payment per-call alpha stream for autonomous AI trading agents"
+    }
+  ]
+}
