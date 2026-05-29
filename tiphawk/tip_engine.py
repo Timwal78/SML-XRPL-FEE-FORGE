@@ -168,7 +168,7 @@ async def execute_tip(cmd: TipCommand) -> dict:
 
         asyncio.create_task(fire_payment_alert(
             wallet=sender_addr,
-            product="TipHawk",
+            product="TipMaster",
             endpoint=f"tip @{cmd.sender_handle}→@{cmd.recipient_handle}",
             amount=str(gross),
         ))
