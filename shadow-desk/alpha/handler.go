@@ -56,7 +56,7 @@ func Handler(cfg *config.Config) http.HandlerFunc {
 		if !ok {
 			// No proof present: send 402 challenge so the agent can fund and retry.
 			slog.Info("payment required", "ticker", ticker, "remote", r.RemoteAddr)
-			payment.Challenge(w, cfg.AlphaProviderWallet, cfg.FacilitatorURL)
+			payment.Challenge(w, r, cfg.AlphaProviderWallet, cfg.FacilitatorURL)
 			return
 		}
 
