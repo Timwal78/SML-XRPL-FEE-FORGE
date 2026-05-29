@@ -1,12 +1,9 @@
 services:
-  # ---------------------------------------------------------------------------
-  # RLUSD Rails checkout engine (unchanged)
-  # ---------------------------------------------------------------------------
   - type: web
     name: sml-rails
     env: docker
     dockerfilePath: ./Dockerfile.rails
-    plan: free
+    plan: starter
     healthCheckPath: /api/health
     envVars:
       - key: XRPL_NETWORK
@@ -20,24 +17,18 @@ services:
       - key: RAILS_PORT
         value: "8002"
 
-  # ---------------------------------------------------------------------------
-  # forge-redis — rate limiting & metrics store
-  # ---------------------------------------------------------------------------
   - type: redis
     name: forge-redis
     plan: free
     maxmemoryPolicy: allkeys-lru
     ipAllowList: []
 
-  # ---------------------------------------------------------------------------
-  # forge-gateway — x402 payment middleware + BYOK inference (Go)
-  # ---------------------------------------------------------------------------
   - type: web
     name: forge-gateway
     env: docker
     dockerfilePath: ./x402-gateway/Dockerfile
     dockerContext: ./x402-gateway
-    plan: free
+    plan: starter
     healthCheckPath: /health
     autoDeploy: true
     envVars:
@@ -69,16 +60,12 @@ services:
       - key: RATE_LIMIT_RPM
         value: "60"
 
-  # ---------------------------------------------------------------------------
-  # shadow-desk — x402 institutional alpha gateway (Go)
-  # TradingView signals ingested at POST /v1/ingest, served at GET /v1/alpha/stream
-  # ---------------------------------------------------------------------------
   - type: web
     name: shadow-desk
     env: docker
     dockerfilePath: ./shadow-desk/Dockerfile
     dockerContext: ./shadow-desk
-    plan: free
+    plan: starter
     healthCheckPath: /healthz
     autoDeploy: true
     envVars:
@@ -97,25 +84,16 @@ services:
       - key: ADMIN_API_KEY
         sync: false
 
-  # ---------------------------------------------------------------------------
-  # sml-copytrader-db — PostgreSQL for copy-trader persistent state
-  # (leaders, followers, mirror trades)
-  # ---------------------------------------------------------------------------
   - type: pgsql
     name: sml-copytrader-db
-    plan: free
+    plan: starter
     ipAllowList: []
 
-  # ---------------------------------------------------------------------------
-  # sml-copytrader — XRPL copy-trading engine
-  # Watches leader wallets on XRPL and mirrors OfferCreate transactions
-  # to subscribed follower wallets, proportionally sized.
-  # ---------------------------------------------------------------------------
   - type: web
     name: sml-copytrader
     env: docker
     dockerfilePath: ./Dockerfile.copytrader
-    plan: free
+    plan: starter
     healthCheckPath: /health
     autoDeploy: true
     envVars:
@@ -137,23 +115,16 @@ services:
       - key: DISCORD_WEBHOOK_COPYTRADER
         sync: false
 
-  # ---------------------------------------------------------------------------
-  # sml-launchpad-db — PostgreSQL for launchpad token + trade history
-  # ---------------------------------------------------------------------------
   - type: pgsql
     name: sml-launchpad-db
-    plan: free
+    plan: starter
     ipAllowList: []
 
-  # ---------------------------------------------------------------------------
-  # sml-launchpad — XRPL memecoin launchpad (pump.fun style)
-  # Bonding curve token creation → auto-migration to XRPL native AMM at goal
-  # ---------------------------------------------------------------------------
   - type: web
     name: sml-launchpad
     env: docker
     dockerfilePath: ./Dockerfile.launchpad
-    plan: free
+    plan: starter
     healthCheckPath: /health
     autoDeploy: true
     envVars:
@@ -173,10 +144,6 @@ services:
       - key: DISCORD_WEBHOOK_LAUNCHPAD
         sync: false
 
-  # ---------------------------------------------------------------------------
-  # sml-forge-dashboard — React revenue command UI (Render Static Site)
-  # VITE_GATEWAY_URL must match the actual Render-assigned gateway URL.
-  # ---------------------------------------------------------------------------
   - type: web
     name: sml-forge-dashboard
     env: static
