@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-terminal-bg text-terminal-text font-mono;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply bg-terminal-panel border border-terminal-border rounded-sm p-4;
+  }
+
+  .stat-card {
+    @apply panel flex flex-col gap-1;
+  }
+
+  .stat-value {
+    @apply text-2xl font-bold tracking-tight;
+  }
+
+  .stat-label {
+    @apply text-xs text-terminal-dim uppercase tracking-widest;
+  }
+
+  .neon-text-cyan    { @apply text-neon-cyan;    text-shadow: 0 0 8px #00FFFF; }
+  .neon-text-green   { @apply text-neon-green;   text-shadow: 0 0 8px #00FF41; }
+  .neon-text-magenta { @apply text-neon-magenta; text-shadow: 0 0 8px #FF00FF; }
+  .neon-text-amber   { @apply text-neon-amber;   text-shadow: 0 0 8px #FFB800; }
+  .neon-text-red     { @apply text-neon-red;     text-shadow: 0 0 8px #FF0040; }
+
+  .nav-item {
+    @apply flex items-center gap-2 px-3 py-2 text-sm text-terminal-dim
+           hover:text-neon-cyan hover:bg-terminal-surface
+           transition-colors duration-150 cursor-pointer border-l-2 border-transparent;
+  }
+
+  .nav-item.active {
+    @apply text-neon-cyan border-l-neon-cyan bg-terminal-surface;
+  }
+
+  .table-row {
+    @apply border-b border-terminal-border hover:bg-terminal-surface transition-colors duration-100;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-1.5 py-0.5 text-xs font-medium rounded-sm;
+  }
+}
+
+/* Scanline overlay for terminal aesthetics */
+.scanlines::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 3px,
+    rgba(0, 0, 0, 0.08) 3px,
+    rgba(0, 0, 0, 0.08) 4px
+  );
+  z-index: 9999;
+}
