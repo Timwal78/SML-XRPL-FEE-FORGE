@@ -19,12 +19,12 @@ type Resource struct {
 
 // AcceptEntry is one accepted payment option in the top-level accepts[] array.
 type AcceptEntry struct {
-	Scheme            string `json:"scheme"`
-	Network           string `json:"network"`
+	Scheme string `json:"scheme"`
+	Network string `json:"network"`
 	// Asset is the ERC-20 contract address on the target network.
-	Asset             string `json:"asset"`
-	MaxAmountRequired string `json:"maxAmountRequired"`
-	// Resource URL string (v2 puts it inside each accepts entry as a URL string).
+	Asset string `json:"asset"`
+	// Amount is the v2 field for price (v1 used maxAmountRequired — now invalid).
+	Amount            string `json:"amount"`
 	Resource          string `json:"resource"`
 	Description       string `json:"description"`
 	MimeType          string `json:"mimeType"`
@@ -39,13 +39,22 @@ type Extra struct {
 	Decimals int    `json:"decimals"`
 }
 
-// BazaarExtension is the Coinbase Bazaar discovery extension block.
-// Required for Agentic.market / CDP Bazaar indexing.
-type BazaarExtension struct {
+// BazaarInfo is the discovery metadata block required by Coinbase Bazaar / Agentic.market.
+// The validator requires this to be nested under bazaar.info, not at bazaar top-level.
+type BazaarInfo struct {
 	Name        string   `json:"name"`
 	Description string   `json:"description"`
 	Category    string   `json:"category"`
 	Keywords    []string `json:"keywords"`
+}
+
+// BazaarExtension is the full Coinbase Bazaar discovery extension.
+// Structure: { info: {...}, schema: {...} }
+type BazaarExtension struct {
+	Info   BazaarInfo     `json:"info"`
+	// Schema is a JSON Schema (draft-07) that describes the API output structure.
+	// Bazaar validators use this during indexing to confirm response shape.
+	Schema map[string]any `json:"schema"`
 }
 
 // Extensions carries optional protocol extensions keyed by name.
@@ -54,8 +63,7 @@ type Extensions struct {
 }
 
 // PaymentRequired is the full x402 v2 top-level response object.
-// It is base64-encoded and delivered via the PAYMENT-REQUIRED response header
-// (not X-PAYMENT-REQUIRED — v2 spec renamed the header).
+// It is base64-encoded and delivered via the PAYMENT-REQUIRED response header.
 type PaymentRequired struct {
 	X402Version int           `json:"x402Version"`
 	Resource    Resource      `json:"resource"`
@@ -69,12 +77,29 @@ const (
 	// USDC contract on Base mainnet — verified on Basescan.
 	usdcContractBase = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
 
-	// 5000 micro-USDC == 0.005 USDC per request.
+	// 5000 micro-USDC == 0.005 USDC per request (6 decimal places).
 	priceAmount = "5000"
 
 	// 5-minute settlement window.
 	maxTimeoutSeconds = 300
 )
+
+// alphaOutputSchema is the JSON Schema (draft-07) describing the /v1/alpha/stream
+// response payload. Bazaar uses this for structural validation during indexing.
+var alphaOutputSchema = map[string]any{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"type":    "object",
+	"properties": map[string]any{
+		"ticker":      map[string]any{"type": "string", "description": "Equity or crypto ticker symbol"},
+		"signal_type": map[string]any{"type": "string", "description": "Pine Script signal identifier (e.g. Ignition_Locked)"},
+		"price":       map[string]any{"type": "number", "description": "Asset price at signal trigger"},
+		"timestamp":   map[string]any{"type": "string", "format": "date-time", "description": "Signal ingest timestamp (UTC)"},
+		"gamma_wall":  map[string]any{"type": []any{"number", "null"}, "description": "Options gamma wall strike level"},
+		"block_flow":  map[string]any{"type": []any{"number", "null"}, "description": "Dark pool block flow imbalance"},
+		"served_at":   map[string]any{"type": "string", "format": "date-time", "description": "Response serve timestamp (UTC)"},
+	},
+	"required": []string{"ticker", "served_at"},
+}
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
@@ -89,7 +114,7 @@ func Challenge(w http.ResponseWriter, r *http.Request, alphaWallet, facilitatorU
 		resourceURL += "?" + r.URL.RawQuery
 	}
 
-	description := "Real-time US equity squeeze alpha signal. $0.005 USDC per call on Base mainnet. Ed25519-signed response."
+	description := "Real-time US equity squeeze alpha signal. $0.005 USDC per call on Base mainnet."
 
 	req := PaymentRequired{
 		X402Version: 2,
@@ -100,10 +125,11 @@ func Challenge(w http.ResponseWriter, r *http.Request, alphaWallet, facilitatorU
 		},
 		Accepts: []AcceptEntry{
 			{
-				Scheme:            "exact",
-				Network:           "base",
-				Asset:             usdcContractBase,
-				MaxAmountRequired: priceAmount,
+				Scheme:  "exact",
+				Network: "base",
+				Asset:   usdcContractBase,
+				// Amount is the v2 field name — maxAmountRequired was the v1 name.
+				Amount:            priceAmount,
 				Resource:          resourceURL,
 				Description:       description,
 				MimeType:          "application/json",
@@ -117,10 +143,14 @@ func Challenge(w http.ResponseWriter, r *http.Request, alphaWallet, facilitatorU
 		},
 		Extensions: Extensions{
 			Bazaar: BazaarExtension{
-				Name:        "Shadow Desk Alpha Stream",
-				Description: "Institutional US equity short-squeeze alpha for autonomous AI agents. Real-time Pine Script signals, gamma walls, and block flows. Pay-per-request via x402 micropayments.",
-				Category:    "finance",
-				Keywords:    []string{"short-squeeze", "GME", "AMC", "IWM", "alpha", "equity", "meme-stock", "USDC", "x402"},
+				// info is the nested block the Bazaar validator requires for discovery.
+				Info: BazaarInfo{
+					Name:        "Shadow Desk Alpha Stream",
+					Description: "Institutional US equity short-squeeze alpha for autonomous AI agents. Real-time Pine Script signals, gamma walls, and block flows. Pay-per-request via x402 micropayments.",
+					Category:    "finance",
+					Keywords:    []string{"short-squeeze", "GME", "AMC", "IWM", "alpha", "equity", "meme-stock", "USDC", "x402"},
+				},
+				Schema: alphaOutputSchema,
 			},
 		},
 	}
@@ -141,11 +171,11 @@ func Challenge(w http.ResponseWriter, r *http.Request, alphaWallet, facilitatorU
 	w.WriteHeader(http.StatusPaymentRequired)
 
 	// Human-readable body — agents use the header.
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"error":   "payment_required",
+	json.NewEncoder(w).Encode(map[string]any{
+		"error":       "payment_required",
 		"x402Version": 2,
-		"message": "Send USDC on Base then retry with X-Payment-Signature header.",
-		"payment": req,
+		"message":     "Send USDC on Base then retry with X-Payment-Signature header.",
+		"payment":     req,
 	})
 }
 
