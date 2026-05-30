@@ -33,6 +33,8 @@ type BazaarInfo struct {
 // ExtensionsBazaar contains Bazaar discovery metadata.
 type ExtensionsBazaar struct {
 	BazaarResourceServerExtension bool                   `json:"bazaarResourceServerExtension"`
+	ToolName                      string                 `json:"toolName,omitempty"`
+	Method                        string                 `json:"method,omitempty"`
 	Info                          BazaarInfo             `json:"info"`
 	Schema                        map[string]interface{} `json:"schema,omitempty"`
 }

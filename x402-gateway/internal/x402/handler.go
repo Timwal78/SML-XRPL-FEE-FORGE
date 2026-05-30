@@ -165,6 +165,8 @@ func (h *Handler) buildPaymentReqs() models.PaymentRequiredV2 {
 		Extensions: models.ExtensionsV2{
 			Bazaar: models.ExtensionsBazaar{
 				BazaarResourceServerExtension: true,
+				ToolName:                      "sml_forge_inference",
+				Method:                        "POST",
 				Info: models.BazaarInfo{
 					Name:        "SML Forge Inference API",
 					Description: "Premium AI inference for x402 agents",
