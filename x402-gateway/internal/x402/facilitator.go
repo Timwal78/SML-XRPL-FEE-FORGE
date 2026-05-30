@@ -34,9 +34,9 @@ func NewFacilitator(baseURL string) *Facilitator {
 }
 
 // Verify calls POST /verify on the facilitator and returns validation result.
-func (f *Facilitator) Verify(ctx context.Context, paymentHeader string, reqs models.PaymentRequirements) (*models.FacilitatorVerifyResponse, error) {
+func (f *Facilitator) Verify(ctx context.Context, paymentHeader string, reqs models.PaymentRequiredV2) (*models.FacilitatorVerifyResponse, error) {
 	body := models.FacilitatorVerifyRequest{
-		X402Version:         1,
+		X402Version:         2,
 		Payload:             paymentHeader,
 		PaymentRequirements: reqs,
 	}
@@ -61,9 +61,9 @@ func (f *Facilitator) Verify(ctx context.Context, paymentHeader string, reqs mod
 }
 
 // Settle calls POST /settle on the facilitator and returns settlement result.
-func (f *Facilitator) Settle(ctx context.Context, paymentHeader string, reqs models.PaymentRequirements) (*models.FacilitatorSettleResponse, error) {
+func (f *Facilitator) Settle(ctx context.Context, paymentHeader string, reqs models.PaymentRequiredV2) (*models.FacilitatorSettleResponse, error) {
 	body := models.FacilitatorSettleRequest{
-		X402Version:         1,
+		X402Version:         2,
 		Payload:             paymentHeader,
 		PaymentRequirements: reqs,
 	}

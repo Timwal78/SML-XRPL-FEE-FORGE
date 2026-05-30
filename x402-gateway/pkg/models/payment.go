@@ -2,18 +2,41 @@ package models
 
 import "time"
 
-// PaymentRequirements is the x402 payment details encoded in the X-PAYMENT-REQUIRED header.
-type PaymentRequirements struct {
-	Scheme             string      `json:"scheme"`
-	Network            string      `json:"network"`
-	MaxAmountRequired  string      `json:"maxAmountRequired"`
-	Resource           string      `json:"resource"`
-	Description        string      `json:"description"`
-	MimeType           string      `json:"mimeType"`
-	PayTo              string      `json:"payTo"`
-	MaxTimeoutSeconds  int         `json:"maxTimeoutSeconds"`
-	Asset              string      `json:"asset"`
-	Extra              AssetExtra  `json:"extra"`
+// ResourceV2 defines the resource being protected.
+type ResourceV2 struct {
+	URL         string `json:"url"`
+	Description string `json:"description"`
+	MimeType    string `json:"mimeType"`
+}
+
+// AcceptsV2 defines an accepted payment method.
+type AcceptsV2 struct {
+	Scheme            string     `json:"scheme"`
+	Network           string     `json:"network"`
+	Asset             string     `json:"asset"`
+	Amount            string     `json:"amount"`
+	PayTo             string     `json:"payTo"`
+	MaxTimeoutSeconds int        `json:"maxTimeoutSeconds"`
+	Extra             AssetExtra `json:"extra"`
+}
+
+// ExtensionsBazaar contains Bazaar discovery metadata.
+type ExtensionsBazaar struct {
+	Name                          string `json:"name"`
+	BazaarResourceServerExtension bool   `json:"bazaarResourceServerExtension"`
+}
+
+// ExtensionsV2 contains optional x402 extensions.
+type ExtensionsV2 struct {
+	Bazaar ExtensionsBazaar `json:"bazaar"`
+}
+
+// PaymentRequiredV2 is the x402 v2 payload encoded in the PAYMENT-REQUIRED header.
+type PaymentRequiredV2 struct {
+	X402Version int          `json:"x402Version"`
+	Resource    ResourceV2   `json:"resource"`
+	Accepts     []AcceptsV2  `json:"accepts"`
+	Extensions  ExtensionsV2 `json:"extensions"`
 }
 
 type AssetExtra struct {
@@ -23,23 +46,23 @@ type AssetExtra struct {
 
 // FacilitatorVerifyRequest is sent to POST https://x402.org/facilitator/verify.
 type FacilitatorVerifyRequest struct {
-	X402Version         int                 `json:"x402Version"`
-	Payload             string              `json:"payload"`
-	PaymentRequirements PaymentRequirements `json:"paymentRequirements"`
+	X402Version         int               `json:"x402Version"`
+	Payload             string            `json:"payload"`
+	PaymentRequirements PaymentRequiredV2 `json:"paymentRequirements"`
 }
 
 // FacilitatorVerifyResponse is returned by the facilitator /verify endpoint.
 type FacilitatorVerifyResponse struct {
-	IsValid bool   `json:"isValid"`
+	IsValid       bool   `json:"isValid"`
 	InvalidReason string `json:"invalidReason,omitempty"`
-	Payer   string `json:"payer,omitempty"`
+	Payer         string `json:"payer,omitempty"`
 }
 
 // FacilitatorSettleRequest is sent to POST https://x402.org/facilitator/settle.
 type FacilitatorSettleRequest struct {
-	X402Version         int                 `json:"x402Version"`
-	Payload             string              `json:"payload"`
-	PaymentRequirements PaymentRequirements `json:"paymentRequirements"`
+	X402Version         int               `json:"x402Version"`
+	Payload             string            `json:"payload"`
+	PaymentRequirements PaymentRequiredV2 `json:"paymentRequirements"`
 }
 
 // FacilitatorSettleResponse is returned by the facilitator /settle endpoint.

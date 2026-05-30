@@ -55,7 +55,10 @@ func (h *Handler) buildPaymentRequired() string {
 // Valid + settled → continues to the next handler with X-PAYMENT-RESPONSE header.
 func (h *Handler) PaymentMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		paymentHeader := r.Header.Get("X-PAYMENT")
+		paymentHeader := r.Header.Get("PAYMENT")
+		if paymentHeader == "" {
+			paymentHeader = r.Header.Get("X-PAYMENT") // Fallback
+		}
 		if paymentHeader == "" {
 			h.require402(w)
 			return
@@ -72,7 +75,7 @@ func (h *Handler) PaymentMiddleware(next http.Handler) http.Handler {
 		}
 		if !verifyResp.IsValid {
 			log.Warn().Str("reason", verifyResp.InvalidReason).Msg("payment invalid")
-			w.Header().Set("X-PAYMENT-REQUIRED", h.paymentRequired)
+			w.Header().Set("PAYMENT-REQUIRED", h.paymentRequired)
 			writeJSON(w, http.StatusPaymentRequired, map[string]string{
 				"error":  "payment_invalid",
 				"reason": verifyResp.InvalidReason,
@@ -126,32 +129,45 @@ func (h *Handler) PaymentMiddleware(next http.Handler) http.Handler {
 			"network": "base",
 			"payer":   verifyResp.Payer,
 		})
+		w.Header().Set("PAYMENT-RESPONSE", base64.StdEncoding.EncodeToString(paymentResponseB))
 		w.Header().Set("X-PAYMENT-RESPONSE", base64.StdEncoding.EncodeToString(paymentResponseB))
 		next.ServeHTTP(w, r)
 	})
 }
 
 func (h *Handler) require402(w http.ResponseWriter) {
-	w.Header().Set("X-PAYMENT-REQUIRED", h.paymentRequired)
+	w.Header().Set("PAYMENT-REQUIRED", h.paymentRequired)
 	writeJSON(w, http.StatusPaymentRequired, map[string]interface{}{
-		"error":       "payment_required",
-		"details":     "Attach X-PAYMENT header with EIP-3009 transferWithAuthorization",
-		"x402Version": 1,
+		"error":   "payment_required",
+		"details": "Attach PAYMENT header with EIP-3009 transferWithAuthorization",
 	})
 }
 
-func (h *Handler) buildPaymentReqs() models.PaymentRequirements {
-	return models.PaymentRequirements{
-		Scheme:            "exact",
-		Network:           "base",
-		MaxAmountRequired: h.paymentAmount,
-		Resource:          "/api/inference",
-		Description:       "AI Inference — x402 | SML XRPL Fee Forge",
-		MimeType:          "application/json",
-		PayTo:             h.merchantWallet,
-		MaxTimeoutSeconds: 60,
-		Asset:             baseUSDCAsset,
-		Extra:             models.AssetExtra{Name: "USDC", Decimals: 6},
+func (h *Handler) buildPaymentReqs() models.PaymentRequiredV2 {
+	return models.PaymentRequiredV2{
+		X402Version: 2,
+		Resource: models.ResourceV2{
+			URL:         "/api/inference",
+			Description: "AI Inference — x402 | SML XRPL Fee Forge",
+			MimeType:    "application/json",
+		},
+		Accepts: []models.AcceptsV2{
+			{
+				Scheme:            "exact",
+				Network:           "base",
+				Asset:             baseUSDCAsset,
+				Amount:            h.paymentAmount,
+				PayTo:             h.merchantWallet,
+				MaxTimeoutSeconds: 60,
+				Extra:             models.AssetExtra{Name: "USDC", Decimals: 6},
+			},
+		},
+		Extensions: models.ExtensionsV2{
+			Bazaar: models.ExtensionsBazaar{
+				Name:                          "SML Forge Inference API",
+				BazaarResourceServerExtension: true,
+			},
+		},
 	}
 }
 
