@@ -178,6 +178,13 @@ func (h *Handler) buildPaymentReqs(url string, method string) models.PaymentRequ
 					Method:        method,
 					ToolName:      "sml_forge_inference",
 					ToolNameSnake: "sml_forge_inference",
+					Tool:          "sml_forge_inference",
+					Input: map[string]interface{}{
+						"model": "mistral-7b",
+						"messages": []map[string]interface{}{
+							{"role": "user", "content": "Hello!"},
+						},
+					},
 					InputSchema: map[string]interface{}{
 						"type": "object",
 						"properties": map[string]interface{}{

@@ -26,11 +26,13 @@ type AcceptsV2 struct {
 // BazaarInfo contains discovery metadata.
 type BazaarInfo struct {
 	Name          string                 `json:"name"`
-	Title         string                 `json:"title,omitempty"`
+	Title         string                 `json:"title"`
 	Description   string                 `json:"description"`
 	Method        string                 `json:"method,omitempty"`
 	ToolName      string                 `json:"toolName,omitempty"`
 	ToolNameSnake string                 `json:"tool_name,omitempty"`
+	Tool          string                 `json:"tool,omitempty"`
+	Input         map[string]interface{} `json:"input,omitempty"`
 	InputSchema   map[string]interface{} `json:"inputSchema,omitempty"`
 	Output        map[string]interface{} `json:"output,omitempty"`
 }
