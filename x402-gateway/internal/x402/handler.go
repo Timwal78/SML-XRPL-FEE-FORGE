@@ -168,6 +168,8 @@ func (h *Handler) buildPaymentReqs() models.PaymentRequiredV2 {
 				Info: models.BazaarInfo{
 					Name:        "SML Forge Inference API",
 					Description: "Premium AI inference for x402 agents",
+					Method:      "POST",
+					ToolName:    "sml_forge_inference",
 					Input: map[string]interface{}{
 						"model": "mistral-7b",
 						"messages": []map[string]interface{}{
@@ -177,6 +179,16 @@ func (h *Handler) buildPaymentReqs() models.PaymentRequiredV2 {
 					Output: map[string]interface{}{
 						"type":        "application/json",
 						"description": "JSON object containing choices with message replies",
+						"example": map[string]interface{}{
+							"choices": []map[string]interface{}{
+								{
+									"message": map[string]interface{}{
+										"role":    "assistant",
+										"content": "Hello, I am ready.",
+									},
+								},
+							},
+						},
 					},
 				},
 				Schema: map[string]interface{}{

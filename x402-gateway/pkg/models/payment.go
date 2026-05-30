@@ -24,6 +24,8 @@ type AcceptsV2 struct {
 type BazaarInfo struct {
 	Name        string                 `json:"name"`
 	Description string                 `json:"description"`
+	Method      string                 `json:"method,omitempty"`
+	ToolName    string                 `json:"toolName,omitempty"`
 	Input       map[string]interface{} `json:"input,omitempty"`
 	Output      map[string]interface{} `json:"output,omitempty"`
 }
