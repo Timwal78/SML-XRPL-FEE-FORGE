@@ -22,8 +22,10 @@ type AcceptsV2 struct {
 
 // BazaarInfo contains discovery metadata.
 type BazaarInfo struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	Name        string                 `json:"name"`
+	Description string                 `json:"description"`
+	Input       map[string]interface{} `json:"input,omitempty"`
+	Output      map[string]interface{} `json:"output,omitempty"`
 }
 
 // ExtensionsBazaar contains Bazaar discovery metadata.
