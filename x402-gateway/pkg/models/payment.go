@@ -7,6 +7,9 @@ type ResourceV2 struct {
 	URL         string `json:"url"`
 	Description string `json:"description"`
 	MimeType    string `json:"mimeType"`
+	Method      string `json:"method,omitempty"`
+	ToolName    string `json:"toolName,omitempty"`
+	ToolNameSnake string `json:"tool_name,omitempty"`
 }
 
 // AcceptsV2 defines an accepted payment method.
@@ -22,19 +25,21 @@ type AcceptsV2 struct {
 
 // BazaarInfo contains discovery metadata.
 type BazaarInfo struct {
-	Name        string                 `json:"name"`
-	Title       string                 `json:"title,omitempty"`
-	Description string                 `json:"description"`
-	Method      string                 `json:"method,omitempty"`
-	ToolName    string                 `json:"toolName,omitempty"`
-	Input       map[string]interface{} `json:"input,omitempty"`
-	Output      map[string]interface{} `json:"output,omitempty"`
+	Name          string                 `json:"name"`
+	Title         string                 `json:"title,omitempty"`
+	Description   string                 `json:"description"`
+	Method        string                 `json:"method,omitempty"`
+	ToolName      string                 `json:"toolName,omitempty"`
+	ToolNameSnake string                 `json:"tool_name,omitempty"`
+	Input         map[string]interface{} `json:"input,omitempty"`
+	Output        map[string]interface{} `json:"output,omitempty"`
 }
 
 // ExtensionsBazaar contains Bazaar discovery metadata.
 type ExtensionsBazaar struct {
 	BazaarResourceServerExtension bool                   `json:"bazaarResourceServerExtension"`
 	ToolName                      string                 `json:"toolName,omitempty"`
+	ToolNameSnake                 string                 `json:"tool_name,omitempty"`
 	Method                        string                 `json:"method,omitempty"`
 	Info                          BazaarInfo             `json:"info"`
 	Schema                        map[string]interface{} `json:"schema,omitempty"`

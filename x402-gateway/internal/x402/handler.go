@@ -147,9 +147,12 @@ func (h *Handler) buildPaymentReqs() models.PaymentRequiredV2 {
 	return models.PaymentRequiredV2{
 		X402Version: 2,
 		Resource: models.ResourceV2{
-			URL:         "/api/inference",
-			Description: "AI Inference — x402 | SML XRPL Fee Forge",
-			MimeType:    "application/json",
+			URL:           "/api/inference",
+			Description:   "AI Inference — x402 | SML XRPL Fee Forge",
+			MimeType:      "application/json",
+			Method:        "POST",
+			ToolName:      "sml_forge_inference",
+			ToolNameSnake: "sml_forge_inference",
 		},
 		Accepts: []models.AcceptsV2{
 			{
@@ -166,13 +169,15 @@ func (h *Handler) buildPaymentReqs() models.PaymentRequiredV2 {
 			Bazaar: models.ExtensionsBazaar{
 				BazaarResourceServerExtension: true,
 				ToolName:                      "sml_forge_inference",
+				ToolNameSnake:                 "sml_forge_inference",
 				Method:                        "POST",
 				Info: models.BazaarInfo{
-					Name:        "sml_forge_inference",
-					Title:       "SML Forge Inference API",
-					Description: "Premium AI inference for x402 agents",
-					Method:      "POST",
-					ToolName:    "sml_forge_inference",
+					Name:          "sml_forge_inference",
+					Title:         "SML Forge Inference API",
+					Description:   "Premium AI inference for x402 agents",
+					Method:        "POST",
+					ToolName:      "sml_forge_inference",
+					ToolNameSnake: "sml_forge_inference",
 					Input: map[string]interface{}{
 						"model": "mistral-7b",
 						"messages": []map[string]interface{}{

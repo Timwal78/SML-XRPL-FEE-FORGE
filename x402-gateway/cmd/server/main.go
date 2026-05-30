@@ -67,6 +67,50 @@ func main() {
 		w.Write([]byte(`{"service": "x402-gateway", "status": "payment_required_for_full_access"}`))
 	})
 
+	r.Get("/.well-known/mcp.json", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{
+			"schema_version": "mcp/1.0",
+			"name": "x402-gateway",
+			"description": "SML Forge Gateway for XRPL and Base",
+			"tools": [
+				{
+					"name": "sml_forge_inference",
+					"method": "POST",
+					"toolName": "sml_forge_inference",
+					"tool_name": "sml_forge_inference",
+					"description": "Premium AI inference for x402 agents",
+					"parameters": {
+						"type": "object",
+						"properties": {
+							"model": { "type": "string" },
+							"messages": { "type": "array" }
+						}
+					}
+				}
+			]
+		}`))
+	})
+
+	r.Get("/.well-known/x402.json", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(`{
+			"name": "x402-gateway",
+			"method": "POST",
+			"toolName": "sml_forge_inference",
+			"tool_name": "sml_forge_inference",
+			"tools": [
+				{
+					"name": "sml_forge_inference",
+					"method": "POST",
+					"toolName": "sml_forge_inference",
+					"tool_name": "sml_forge_inference",
+					"description": "Premium AI inference for x402 agents"
+				}
+			]
+		}`))
+	})
+
 	r.Route("/api/inference", func(r chi.Router) {
 		r.Use(rateLimiter.Middleware)
 		r.Use(handler.PaymentMiddleware)
