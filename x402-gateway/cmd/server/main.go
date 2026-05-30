@@ -80,7 +80,7 @@ func main() {
 					"toolName": "sml_forge_inference",
 					"tool_name": "sml_forge_inference",
 					"description": "Premium AI inference for x402 agents",
-					"parameters": {
+					"inputSchema": {
 						"type": "object",
 						"properties": {
 							"model": { "type": "string" },
@@ -105,7 +105,14 @@ func main() {
 					"method": "POST",
 					"toolName": "sml_forge_inference",
 					"tool_name": "sml_forge_inference",
-					"description": "Premium AI inference for x402 agents"
+					"description": "Premium AI inference for x402 agents",
+					"inputSchema": {
+						"type": "object",
+						"properties": {
+							"model": { "type": "string" },
+							"messages": { "type": "array" }
+						}
+					}
 				}
 			]
 		}`))
