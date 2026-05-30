@@ -25,7 +25,6 @@ type Handler struct {
 	facilitator     *Facilitator
 	notary          *xrpl.Notary
 	hub             *stream.Hub
-	paymentRequired string // pre-computed Base64 header value
 }
 
 func NewHandler(merchantWallet string, facilitator *Facilitator, hub *stream.Hub) *Handler {
@@ -40,14 +39,7 @@ func NewHandler(merchantWallet string, facilitator *Facilitator, hub *stream.Hub
 		notary:         xrpl.NewNotary(),
 		hub:            hub,
 	}
-	h.paymentRequired = h.buildPaymentRequired()
 	return h
-}
-
-func (h *Handler) buildPaymentRequired() string {
-	req := h.buildPaymentReqs()
-	b, _ := json.Marshal(req)
-	return base64.StdEncoding.EncodeToString(b)
 }
 
 // PaymentMiddleware checks for a valid X-PAYMENT header.
@@ -60,14 +52,16 @@ func (h *Handler) PaymentMiddleware(next http.Handler) http.Handler {
 			paymentHeader = r.Header.Get("X-PAYMENT") // Fallback
 		}
 		if paymentHeader == "" {
-			h.require402(w)
+			h.require402(w, r)
 			return
 		}
 
 		ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
 		defer cancel()
 
-		verifyResp, err := h.facilitator.Verify(ctx, paymentHeader, h.buildPaymentReqs())
+		reqs := h.buildPaymentReqs(r.URL.Path, r.Method)
+
+		verifyResp, err := h.facilitator.Verify(ctx, paymentHeader, reqs)
 		if err != nil {
 			log.Error().Err(err).Msg("facilitator verify error")
 			writeJSON(w, http.StatusPaymentRequired, map[string]string{"error": "payment_verification_failed"})
@@ -75,7 +69,10 @@ func (h *Handler) PaymentMiddleware(next http.Handler) http.Handler {
 		}
 		if !verifyResp.IsValid {
 			log.Warn().Str("reason", verifyResp.InvalidReason).Msg("payment invalid")
-			w.Header().Set("PAYMENT-REQUIRED", h.paymentRequired)
+			
+			b, _ := json.Marshal(reqs)
+			w.Header().Set("PAYMENT-REQUIRED", base64.StdEncoding.EncodeToString(b))
+			
 			writeJSON(w, http.StatusPaymentRequired, map[string]string{
 				"error":  "payment_invalid",
 				"reason": verifyResp.InvalidReason,
@@ -83,7 +80,7 @@ func (h *Handler) PaymentMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		settleResp, err := h.facilitator.Settle(ctx, paymentHeader, h.buildPaymentReqs())
+		settleResp, err := h.facilitator.Settle(ctx, paymentHeader, reqs)
 		if err != nil {
 			log.Error().Err(err).Msg("facilitator settle error")
 			writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "settlement_failed_retry"})
@@ -135,22 +132,25 @@ func (h *Handler) PaymentMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func (h *Handler) require402(w http.ResponseWriter) {
-	w.Header().Set("PAYMENT-REQUIRED", h.paymentRequired)
+func (h *Handler) require402(w http.ResponseWriter, r *http.Request) {
+	reqs := h.buildPaymentReqs(r.URL.Path, r.Method)
+	b, _ := json.Marshal(reqs)
+	
+	w.Header().Set("PAYMENT-REQUIRED", base64.StdEncoding.EncodeToString(b))
 	writeJSON(w, http.StatusPaymentRequired, map[string]interface{}{
 		"error":   "payment_required",
 		"details": "Attach PAYMENT header with EIP-3009 transferWithAuthorization",
 	})
 }
 
-func (h *Handler) buildPaymentReqs() models.PaymentRequiredV2 {
+func (h *Handler) buildPaymentReqs(url string, method string) models.PaymentRequiredV2 {
 	return models.PaymentRequiredV2{
 		X402Version: 2,
 		Resource: models.ResourceV2{
-			URL:           "/api/inference",
+			URL:           url,
 			Description:   "AI Inference — x402 | SML XRPL Fee Forge",
 			MimeType:      "application/json",
-			Method:        "POST",
+			Method:        method,
 			ToolName:      "sml_forge_inference",
 			ToolNameSnake: "sml_forge_inference",
 		},
@@ -170,12 +170,12 @@ func (h *Handler) buildPaymentReqs() models.PaymentRequiredV2 {
 				BazaarResourceServerExtension: true,
 				ToolName:                      "sml_forge_inference",
 				ToolNameSnake:                 "sml_forge_inference",
-				Method:                        "POST",
+				Method:                        method,
 				Info: models.BazaarInfo{
 					Name:          "sml_forge_inference",
 					Title:         "SML Forge Inference API",
 					Description:   "Premium AI inference for x402 agents",
-					Method:        "POST",
+					Method:        method,
 					ToolName:      "sml_forge_inference",
 					ToolNameSnake: "sml_forge_inference",
 					Input: map[string]interface{}{
