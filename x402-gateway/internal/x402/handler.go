@@ -168,7 +168,8 @@ func (h *Handler) buildPaymentReqs() models.PaymentRequiredV2 {
 				ToolName:                      "sml_forge_inference",
 				Method:                        "POST",
 				Info: models.BazaarInfo{
-					Name:        "SML Forge Inference API",
+					Name:        "sml_forge_inference",
+					Title:       "SML Forge Inference API",
 					Description: "Premium AI inference for x402 agents",
 					Method:      "POST",
 					ToolName:    "sml_forge_inference",
