@@ -61,6 +61,12 @@ func main() {
 	r.Get("/api/stream", hub.ServeSSE)
 	r.Get("/api/admin/stats", hub.HandleStats)
 
+	// Discoverable root endpoint for x402 validators
+	r.With(handler.PaymentMiddleware).Get("/", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"service": "x402-gateway", "status": "payment_required_for_full_access"}`))
+	})
+
 	r.Route("/api/inference", func(r chi.Router) {
 		r.Use(rateLimiter.Middleware)
 		r.Use(handler.PaymentMiddleware)
