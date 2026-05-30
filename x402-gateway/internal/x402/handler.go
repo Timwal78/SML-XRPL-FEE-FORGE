@@ -164,8 +164,22 @@ func (h *Handler) buildPaymentReqs() models.PaymentRequiredV2 {
 		},
 		Extensions: models.ExtensionsV2{
 			Bazaar: models.ExtensionsBazaar{
-				Name:                          "SML Forge Inference API",
 				BazaarResourceServerExtension: true,
+				Info: models.BazaarInfo{
+					Name:        "SML Forge Inference API",
+					Description: "Premium AI inference for x402 agents",
+				},
+				Schema: map[string]interface{}{
+					"type": "object",
+					"properties": map[string]interface{}{
+						"choices": map[string]interface{}{
+							"type": "array",
+							"items": map[string]interface{}{
+								"type": "object",
+							},
+						},
+					},
+				},
 			},
 		},
 	}

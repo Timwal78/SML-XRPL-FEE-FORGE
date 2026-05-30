@@ -20,10 +20,17 @@ type AcceptsV2 struct {
 	Extra             AssetExtra `json:"extra"`
 }
 
+// BazaarInfo contains discovery metadata.
+type BazaarInfo struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
 // ExtensionsBazaar contains Bazaar discovery metadata.
 type ExtensionsBazaar struct {
-	Name                          string `json:"name"`
-	BazaarResourceServerExtension bool   `json:"bazaarResourceServerExtension"`
+	BazaarResourceServerExtension bool                   `json:"bazaarResourceServerExtension"`
+	Info                          BazaarInfo             `json:"info"`
+	Schema                        map[string]interface{} `json:"schema,omitempty"`
 }
 
 // ExtensionsV2 contains optional x402 extensions.
