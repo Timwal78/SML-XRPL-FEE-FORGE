@@ -1,0 +1,13 @@
+{
+  "name": "SML-XRPL-FEE-FORGE",
+  "description": "XRPL fee calculation and transaction forging tools for ScriptMasterLabs",
+  "owner": "ScriptMasterLabs",
+  "github": "https://github.com/timwal78/SML-XRPL-FEE-FORGE",
+  "contact": "scriptmasterlabs@gmail.com",
+  "sovereign": {
+    "noMockData": true,
+    "liveDataOnly": true,
+    "noTelemetry": true,
+    "enforcedBy": ".github/workflows/sovereign-data-check.yml"
+  }
+}
